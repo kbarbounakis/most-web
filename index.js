@@ -4,7 +4,7 @@
 'use strict';
 
 var common = require('./common'), mvc = require('./http-mvc'),
-    html = require('./html'), util = require('util'), array = require('array'),
+    html = require('./html'), util = require('util'), array = require('most-array'),
     async = require('async'), path = require("path"), fs = require("fs"),
     url = require('url'),
     http = require('http'),

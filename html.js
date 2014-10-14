@@ -75,7 +75,7 @@ HtmlWriter.prototype.writeAttributes = function(obj)
  */
 HtmlWriter.prototype.writeBeginTag = function(tag) {
     var string = require('string');
-    var array = require('array');
+    var array = require('most-array');
     //write <TAG
     if (this.indent)
     {
@@ -114,7 +114,7 @@ HtmlWriter.prototype.writeFullBeginTag = function(tag) {
     this.buffer += HTML_START_TAG_STRING.replace(/%0/, tag);
     if (this.bufferedAttributes.length>0)
     {
-        var array = require('array');
+        var array = require('most-array');
         var string = require('string');
         var s = '';
         array(this.bufferedAttributes).each(function(attr) {

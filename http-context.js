@@ -3,7 +3,7 @@ var path = require('path'),
     util = require('util'),
     fs = require('fs'),
     da = require('most-data'),
-    array = require('array'),
+    array = require('most-array'),
     url = require('url'),
     common = require('./common');
 /**
@@ -285,7 +285,7 @@ HttpContext.prototype.writeFile = function (file) {
 
         //get MIME collection
         var contentType = null;
-        var a = require('array');
+        var a = require('most-array');
         var mime = a(app.current.config.mimes).firstOrDefault(function (x) {
             return (x.extension == extensionName);
         });

@@ -4,7 +4,7 @@
 	 */
 
     var url = require('url'),
-        array = require('array'),
+        array = require('most-array'),
         util = require('util'),
         fs = require('fs');
 

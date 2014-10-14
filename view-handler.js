@@ -2,7 +2,7 @@
  * Routing HTTP Handler
  */
 var app = require('./index'),
-    array = require('array'),
+    array = require('most-array'),
     url = require('url'),
     util = require('util'),
     fs = require('fs'),
@@ -344,7 +344,7 @@ ViewHandler.prototype.processRequest = function (context, callback) {
  */
 function queryRoute(requestUri) {
     try {
-        var array = require('array'),
+        var array = require('most-array'),
             util = require('util'),
             route = require('./http-route.js'),
             app = require('./index');
