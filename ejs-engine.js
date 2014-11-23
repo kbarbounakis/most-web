@@ -54,11 +54,11 @@ EjsEngine.prototype.render = function(path, data, callback) {
                         }
                         //create view context
                         var viewContext = app.views.createViewContext(this.context);
+                        //extend view context with page properties
+                        util._extend(viewContext, properties || {});
+                        //set view context data
+                        viewContext.data = data;
                         if (properties.layout) {
-                            //clone page properties
-                            util._extend(viewContext, properties);
-                            //clone view data
-                            util._extend(viewContext, data);
                             var layout = app.current.mapPath(properties.layout);
                             //set current view buffer (after rendering)
                             viewContext.body = ejs.render(str, viewContext);
@@ -87,8 +87,6 @@ EjsEngine.prototype.render = function(path, data, callback) {
                             });
                         }
                         else {
-                            //clone view data
-                            util._extend(viewContext, data);
                             var result = ejs.render(str, viewContext);
                             callback(null, result);
                         }

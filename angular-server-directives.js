@@ -38,12 +38,17 @@ var directives = {
      * @param {HttpApplication} app
      */
     apply: function(app) {
-        app.module.directive('ejsInclude', function($context, $angular, $qs) {
+        app.module.directive('ejsInclude', function($context, $angular, $qs, $sce) {
             return {
                 replace:true,
                 restrict:'EA',
-                link: function (scope, element) {
-                    var src = element.data('src') || element.attr('ejs-include');
+                link: function (scope, element, attrs) {
+                    /**
+                     * @ngdoc attrs
+                     * @property {string} ejsInclude
+                     * @property {string} src
+                     */
+                    var src = attrs.ejsInclude || attrs.src;
                     if (src) {
                         var deferred = $qs.defer();
                         web.current.executeRequest( { url: src, cookie: $context.request.headers.cookie }, function(err, result) {

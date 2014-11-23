@@ -491,6 +491,11 @@ function HttpViewContext(context) {
      */
     this.layout = null;
     /**
+     * Gets or sets the view data
+     * @type {String}
+     */
+    this.data = null;
+    /**
      * Represents the current HTTP context
      * @type {HttpContext}
      */
@@ -511,6 +516,17 @@ function HttpViewContext(context) {
             return writer;
         }, configurable:false, enumerable:false
     });
+
+    var self = this;
+    Object.defineProperty(this, 'model', {
+        get:function() {
+            if (self.context.params)
+                if (self.context.params.controller)
+                    return self.context.model(self.context.params.controller);
+            return null;
+        }, configurable:false, enumerable:false
+    });
+
     this.html = HttpViewContext.HtmlViewHelper(this);
     //class extension initiators
     if (typeof this.init === 'function') {
@@ -538,6 +554,25 @@ HttpViewContext.prototype.render = function(url, callback) {
 
 HttpViewContext.prototype.init = function() {
     //
+};
+
+/**
+ *
+ * @param {String} s
+ * @param {String=} lib
+ * @returns {String}
+ */
+HttpViewContext.prototype.translate = function(s, lib) {
+    return this.context.translate(s, lib);
+};
+/**
+ *
+ * @param {String} s
+ * @param {String=} lib
+ * @returns {String}
+ */
+HttpViewContext.prototype.$T = function(s, lib) {
+    return this.translate(s, lib);
 };
 
 /**

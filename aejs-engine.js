@@ -48,24 +48,12 @@ AsyncEjsEngine.prototype.render = function(path, data, callback) {
                        }
                        //create view context
                        var viewContext = app.views.createViewContext(self._context);
-                       //set translation extension
-                       viewContext.$T = function(s, lib) {
-                           return this.context.translate(s, lib);
-                       };
-                       if (viewContext.context.params)
-                           if (viewContext.context.params.controller)
-                               viewContext.model = viewContext.context.model(viewContext.context.params.controller);
+                       //extend view context with page properties
+                       util._extend(viewContext, properties || {});
+                       //set view context data
+                       viewContext.data = data;
                        if (properties.layout) {
                            var layout = app.current.mapPath(properties.layout);
-                           //clone page properties
-                           util._extend(viewContext, properties);
-                           //clone view data
-                           if (util.isArray(data)) {
-                               viewContext.data = data;
-                           }
-                           else {
-                               util._extend(viewContext, data);
-                           }
                            //render view layout
                            aejs.render(str, { locals: viewContext }, function(err, body) {
                                if (err) {
@@ -106,13 +94,6 @@ AsyncEjsEngine.prototype.render = function(path, data, callback) {
                            });
                        }
                        else {
-                           //clone view data
-                           if (util.isArray(data)) {
-                               viewContext.data = data;
-                           }
-                           else {
-                               util._extend(viewContext, data);
-                           }
                            aejs.render(str, { locals: viewContext }, function(err, result) {
                                if (err) {
                                    callback(err);
