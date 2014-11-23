@@ -72,6 +72,9 @@ var ng = {
         if (typeof global.jQuery !== 'function')
             throw new Error('jQuery object cannot be instantiated due to missing constructor.');
         global.jQuery(window);
+        //extend jQuery
+        var ext = require('./jquery-server-extensions');
+        ext.extend(window.jQuery);
         if (typeof global.angular !== 'function')
             throw new Error('Angular JS object cannot be instantiated due to missing constructor.');
         //initialize angular

@@ -13,6 +13,7 @@ var common = require('./common'), mvc = require('./http-mvc'),
     querystring = require('querystring'),
     HttpBaseController= require('./base-controller'),
     HttpDataController= require('./data-controller'),
+    HttpContext= require('./http-context').HttpContext,
     crypto = require('crypto');
 /**
  * Represents a configuration file that is applicable to an application or service.
@@ -344,7 +345,8 @@ HttpApplication.prototype.init = function () {
     var defaultHandlers = [
         { name:'static',type:'./static-handler' },
         { name:'auth',type:'./auth-handler' },
-        { name:'mvc',type:'./mvc-handler' },
+        { name:'basic-auth',type:'./basic-auth-handler' },
+        { name:'mvc',type:'./view-handler' },
         { name:'post',type:'./post-handler' },
         { name:'directive',type:'./directive-handler' }
     ];
@@ -730,20 +732,26 @@ HttpApplication.prototype.extend = function (extension) {
 
 /**
  *
- * @param {*} options
+ * @param {*|string} options
  * @param {Function} callback
  */
 HttpApplication.prototype.executeRequest = function (options, callback) {
-    var request = this.__createRequest(options),
+    var opts = { };
+    if (typeof options === 'string') {
+        util._extend(opts, { url:options });
+    }
+    else {
+        util._extend(opts, options);
+    }
+    var request = this.__createRequest(opts),
         response = this.__createResponse(request);
-    if (!options.url) {
+    if (!opts.url) {
         callback(new Error('Internal request url cannot be empty at this context.'));
         return;
     }
-    if (options.url.indexOf('/')!=0)
+    if (opts.url.indexOf('/')!=0)
     {
-        var uri = url.parse(options.url);
-        var opts = util._extend({}, options);
+        var uri = url.parse(opts.url);
         opts.host = uri.host;
         opts.hostname = uri.hostname;
         opts.path = uri.path;
@@ -897,16 +905,18 @@ HttpApplication.prototype.onError = function (response, err, callback) {
         console.log(err.stack);
     callback = callback || function () {
     };
-    if (err instanceof common.HttpException) {
-        response.writeHead(err.status, {"Content-Type": "text/plain"});
-        response.write(err.status + ' ' + err.message + "\n");
-    }
-    else {
-        response.writeHead(500, {"Content-Type": "text/plain"});
-        if (err !== undefined)
-            response.write(500 + ' ' + err.message + "\n");
-        else
-            response.write(500 + ' Internal Server Error\n');
+    if (!response._headerSent) {
+        if (err instanceof common.HttpException) {
+            response.writeHead(err.status, {"Content-Type": "text/plain"});
+            response.write(err.status + ' ' + err.message + "\n");
+        }
+        else {
+            response.writeHead(500, {"Content-Type": "text/plain"});
+            if (typeof err !== 'undefined')
+                response.write(500 + ' ' + err.message + "\n");
+            else
+                response.write(500 + ' Internal Server Error\n');
+        }
     }
     callback.call(this);
 }
@@ -953,6 +963,10 @@ var web = {
      * @class HttpApplication
      * */
     HttpApplication: HttpApplication,
+    /**
+     * @class HttpContext
+     * */
+    HttpContext: HttpContext,
     /**
      * @type HttpApplication
      * */

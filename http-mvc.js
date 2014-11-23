@@ -204,8 +204,9 @@ HttpViewResult.prototype.execute = function(context, callback)
         this.name = context.data['action'];
     //validate [path] route param in order to load a view that is located in a views' sub-directory
     if (context.request.route) {
-        if (context.request.route.path) {
-            this.name = path.join(context.request.route.path, this.name);
+        var routePath =  context.request.route.path || context.request.route.data("path");
+        if (routePath) {
+            this.name = path.join(routePath, this.name);
         }
     }
     //get view name
@@ -222,7 +223,7 @@ HttpViewResult.prototype.execute = function(context, callback)
         var p = app.current.mapPath(util.format('/views/%s/%s.html.%s',controllerName,viewName, x.extension));
         if (!fs.existsSync(p)) {
             p = app.current.mapPath(util.format('/views/shared/%s.html.%s',viewName, x.extension));
-            var res = fs.existsSync(p);;
+            var res = fs.existsSync(p);
             if (res==true) {
                 viewPath = p;
                 return true;
@@ -435,10 +436,10 @@ util.inherits(HttpViewEngine, da.types.EventEmitter2);
 
 /**
  * Renders the specified view with the options provided
- * @param path
+ * @param url
  * @param options
  */
-HttpViewEngine.prototype.render = function(path, options, callback) {
+HttpViewEngine.prototype.render = function(url, options, callback) {
     //
 }
 
@@ -492,7 +493,6 @@ function HttpViewContext(context) {
     /**
      * Represents the current HTTP context
      * @type {HttpContext}
-     * @private
      */
     this.context = context;
 
@@ -512,16 +512,21 @@ function HttpViewContext(context) {
         }, configurable:false, enumerable:false
     });
     this.html = HttpViewContext.HtmlViewHelper(this);
+    //class extension initiators
+    if (typeof this.init === 'function') {
+        //call init() method
+        this.init();
+    }
 }
 util.inherits(HttpViewContext, da.types.EventEmitter2);
 /**
- * @param {String} path
+ * @param {String} url
  * @returns {string}
  */
-HttpViewContext.prototype.render = function(path, callback) {
+HttpViewContext.prototype.render = function(url, callback) {
     callback = callback || function() {};
     var app = require('./index');
-    app.current.executeRequest( { url: path, cookie: this.context.request.headers.cookie }, function(err, result) {
+    app.current.executeRequest( { url: url, cookie: this.context.request.headers.cookie }, function(err, result) {
         if (err) {
             callback(err);
         }
@@ -530,30 +535,45 @@ HttpViewContext.prototype.render = function(path, callback) {
         }
     });
 };
+
+HttpViewContext.prototype.init = function() {
+    //
+};
+
 /**
  * @param {HttpViewContext} $view
  * @returns {*}
  */
 HttpViewContext.HtmlViewHelper = function($view)
 {
+    var doc;
     return {
+    /**
+     * Gets a cross-site anti-forgery token included in an input hidden tag.
+     * @returns {String}
+     */
+    antiforgery: function() {
+        //create token
+        var context = $view.context,  value = context.application.encypt(JSON.stringify({ id: Math.floor(Math.random() * 1000000), url:context.request.url, date:new Date() }));
+        //try to set cookie
+        context.response.setHeader('Set-Cookie','.CSRF='.concat(value));
+        return $view.writer.writeAttribute('type', 'hidden')
+            .writeAttribute('id', '_CSRFToken')
+            .writeAttribute('name', '_CSRFToken')
+            .writeAttribute('value', value)
+            .writeFullBeginTag('input')
+            .toString();
+    },
         /**
-         * Gets a cross-site anti-forgery token included in an input hidden tag.
-         * @returns {String}
+         *
+         * @param {*} obj
+         * @returns {jQuery|*}
          */
-        antiforgery: function() {
-            //create token
-            var context = $view.context,  value = context.application.encypt(JSON.stringify({ id: Math.floor(Math.random() * 1000000), url:context.request.url, date:new Date() }));
-            //try to set cookie
-            context.response.setHeader('Set-Cookie','.CSRF='.concat(value));
-            return $view.writer.writeAttribute('type', 'hidden')
-                .writeAttribute('id', '_CSRFToken')
-                .writeAttribute('name', '_CSRFToken')
-                .writeAttribute('value', value)
-                .writeFullBeginTag('input')
-                .toString();
-        }
-    };
+    element: function(obj) {
+        if (typeof doc === 'undefined') { doc = $view.context.application.document(); }
+        return doc.parentWindow.angular.element(obj);
+    }
+};
 }
 
 var mvc = {

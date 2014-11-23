@@ -138,9 +138,20 @@ function HttpContext(httpRequest, httpResponse) {
     //call super class constructor
     if (HttpContext.super_)
         HttpContext.super_.call(this);
+
+    //class extension initiators
+    if (typeof this.init === 'function') {
+        //call init() method
+        this.init();
+    }
+
 }
 //todo: set HttpContext inheritance from configuration
 util.inherits(HttpContext, da.classes.DefaultDataContext);
+
+HttpContext.prototype.init = function() {
+    //
+};
 
 /**
  * Gets or sets the current culture
