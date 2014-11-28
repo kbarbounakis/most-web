@@ -53,7 +53,7 @@ EjsEngine.prototype.render = function(path, data, callback) {
                             str = str.replace(matcher,'');
                         }
                         //create view context
-                        var viewContext = app.views.createViewContext(this.context);
+                        var viewContext = app.views.createViewContext(self.context);
                         //extend view context with page properties
                         util._extend(viewContext, properties || {});
                         //set view context data

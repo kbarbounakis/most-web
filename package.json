@@ -1,8 +1,8 @@
 {
   "name": "most-web",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Most Web Framework - A JavaScript web framework for building scalable web application under node.js",
-  "homepage": "https://github.com/kbarbounakis/most-web",
+  "homepage": "http://www.most-framework.com/",
   "repository": {
     "type": "git",
     "url": "https://github.com/kbarbounakis/most-web.git"
@@ -30,15 +30,15 @@
   "dependencies": {
       "string":"1.5.1",
       "async":"0.2.10",
-      "most-array":"~1.0.1",
       "formidable":"1.0.14",
-      "ejs":"~0.8.5",
+      "ejs":"0.8.5",
       "domino":"1.0.18",
-      "most-data":"~0.1.5",
-      "most-xml":"~0.2.0"
+      "most-array":"~1.0.1",
+      "most-xml":"~0.2.0",
+      "most-data":"~0.1.8"
   },
   "main": "index",
   "scripts": { },
-  "_id": "most-web@1.4.0",
+  "_id": "most-web@1.5.0",
   "_from": "most-web@"
 }

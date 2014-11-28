@@ -58,7 +58,7 @@ var directives = {
                             }
                             else {
                                 element.removeAttr('data-src');
-                                element.replaceWith($angular.element(result.body));
+                                element.replaceWith($angular.element(result.body.replace(/\n/,'')));
                                 deferred.resolve();
                             }
                         });
@@ -145,6 +145,68 @@ var directives = {
                             }
 
 
+                        },
+                        post: angular.noop
+                    }
+                }
+            };
+        }]).directive('ejsLoc', ['$context', function($context) {
+            return {
+                restrict: 'A',
+                link: function(scope, element, attrs) {
+                    /**
+                     * @ngdoc
+                     * @name attrs
+                     * @property {string} ejsLoc
+                     */
+                    if (attrs.title)
+                        element.attr('title', $context.translate(attrs.title, attrs.ejsLoc));
+                    if (attrs.placeholder)
+                        element.attr('placeholder', $context.translate(attrs.placeholder, attrs.ejsLoc));
+                }
+            };
+        }]).directive('ejsLocHtml', ['$context', function($context) {
+            return {
+                restrict: 'A',
+                link: function(scope, element, attrs) {
+                    /**
+                     * @ngdoc
+                     * @name attrs
+                     * @property {string} ejsLocHtml
+                     */
+                    var text = $context.translate(element.html(), attrs.ejsLocHtml);
+                    if (text)
+                        element.html(text);
+                }
+            };
+        }]).directive('ejsUserInRole', ['$context', '$compile', function($context, $compile) {
+            return {
+                restrict:'A',
+                replace: true,
+                priority: 100,
+                compile:function() {
+                    return {
+                        pre: function preLink(scope, element, attrs) {
+                            var user = $context.user;
+                            if (typeof user !== 'undefined') {
+                                user.groups = user.groups || [];
+                                /**
+                                 * @ngdoc attrs
+                                 * @property {string} ejsUserInRole
+                                 *
+                                 * @type {Array}
+                                 */
+                                var roles = (attrs.ejsUserInRole || '').split(',');
+                                var inRole = (user.groups.filter(function(x) { return (roles.indexOf(x.name)>=0); }).length>0);
+                                if (!inRole) {
+                                    element.replaceWith(null);
+                                }
+                                else {
+                                    //do nothing (remove server attributes ?)
+                                    //compile element
+                                    $compile(element)(scope);
+                                }
+                            }
                         },
                         post: angular.noop
                     }
