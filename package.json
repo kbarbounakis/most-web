@@ -34,8 +34,8 @@
       "ejs":"0.8.5",
       "domino":"1.0.18",
       "most-array":"~1.0.1",
-      "most-xml":"~0.2.0",
-      "most-data":"~0.1.8"
+      "most-xml":"~0.3.0",
+      "most-data":"~0.1.9"
   },
   "main": "index",
   "scripts": { },
