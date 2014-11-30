@@ -1,6 +1,6 @@
 {
   "name": "most-web",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Most Web Framework - A JavaScript web framework for building scalable web application under node.js",
   "homepage": "http://www.most-framework.com/",
   "repository": {
@@ -8,15 +8,15 @@
     "url": "https://github.com/kbarbounakis/most-web.git"
   },
   "keywords": [
-	"web",
-	"mvc",
-	"most-web.js",
-	"most-webjs",
-	"framework",
-	"model",
-	"view",
-	"controller",
-	"routes"
+    "web",
+    "mvc",
+    "most-web.js",
+    "most-webjs",
+    "framework",
+    "model",
+    "view",
+    "controller",
+    "routes"
   ],
   "author": {
     "name": "Kyriakos Barbounakis",
@@ -28,17 +28,17 @@
     }
   ],
   "dependencies": {
-      "string":"1.5.1",
-      "async":"0.2.10",
-      "formidable":"1.0.14",
-      "ejs":"0.8.5",
-      "domino":"1.0.18",
-      "most-array":"~1.0.1",
-      "most-xml":"~0.3.0",
-      "most-data":"~0.1.9"
+    "string": "1.5.1",
+    "async": "0.2.10",
+    "formidable": "1.0.14",
+    "ejs": "0.8.5",
+    "domino": "1.0.18",
+    "most-array": "~1.0.1",
+    "most-xml": "~0.3.0",
+    "most-data": "~0.1.9"
   },
   "main": "index",
-  "scripts": { },
+  "scripts": {},
   "_id": "most-web@1.7.0",
   "_from": "most-web@"
 }
