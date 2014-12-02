@@ -202,9 +202,8 @@ var directives = {
                                     element.replaceWith(null);
                                 }
                                 else {
-                                    //do nothing (remove server attributes ?)
-                                    //compile element
-                                    $compile(element)(scope);
+                                    //do nothing (remove server attributes)
+                                    element.removeAttr('ejs-user-in-role').removeAttr('ejs:user-in-role');
                                 }
                             }
                         },
