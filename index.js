@@ -335,6 +335,9 @@ HttpApplication.prototype.init = function () {
     if (this.config.dataTypes == null)
         this.config.dataTypes = ApplicationConfig.loadSync('dataTypes.json');
 
+    //set settings default
+    this.config.settings = this.config.settings || {};
+
     //initialize handlers list
     //important note: Applications handlers are static classes (they will be initialized once),
     //so they should not hold information about http context and execution lifecycle.
@@ -344,6 +347,7 @@ HttpApplication.prototype.init = function () {
     //default handlers
     var defaultHandlers = [
         { name:'static',type:'./static-handler' },
+        { name:'query',type:'./querystring-handler' },
         { name:'auth',type:'./auth-handler' },
         { name:'basic-auth',type:'./basic-auth-handler' },
         { name:'mvc',type:'./view-handler' },
@@ -694,11 +698,32 @@ HttpApplication.prototype.executeExternalRequest = function(options, callback) {
 
 /**
  * Executes an internal process
- * @param {Function(HttpContext)}
+ * @param {function(HttpContext)} fn
  */
 HttpApplication.prototype.execute = function (fn) {
     var request = this.__createRequest();
     fn.call(this, this.createContext(request, this.__createResponse(request)));
+};
+
+/**
+ * Executes an unattended internal process
+ * @param {function(HttpContext)} fn
+ */
+HttpApplication.prototype.unattended = function (fn) {
+    //create context
+    var request = this.__createRequest(), context =  this.createContext(request, this.__createResponse(request));
+    //get unattended account
+    /**
+     * @type {{unattendedExecutionAccount:string}|*}
+     */
+    this.config.settings.auth = this.config.settings.auth || {};
+    var account = this.config.settings.auth.unattendedExecutionAccount;
+    //set unattended execution account
+    if (typeof account !== 'undefined' || account!==null) {
+        context.user = { name: account, authenticationType: 'Basic'};
+    }
+    //execute internal process
+    fn.call(this, context);
 };
 
 /**

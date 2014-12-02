@@ -95,8 +95,7 @@ function isFunction( fn ) {
     return typeof fn === 'function';
 };
 
-
-module.exports = {
+var common = {
     /**
      * @class AbstractMethodException
      * */
@@ -140,5 +139,33 @@ module.exports = {
      * @param fn {Function}
      * @returns {Boolean}
      * */
-    isFunction:isFunction
- }
+    isFunction:isFunction,
+    /**
+     * Checks if the specified string argument is empty, undefined or null.
+     * @param {string} s
+     * @returns {boolean}
+     */
+    isEmptyString: function(s) {
+        if (typeof s === 'undefined' || s===null)
+            return true;
+        if (typeof s === 'string') {
+            return (s.replace(/^\s|\s$/ig,'').length === 0);
+        }
+        return true;
+    },
+    /**
+     * Checks if the specified object argument is undefined or null.
+     * @param {*} obj
+     * @returns {boolean}
+     */
+    isNullOrUndefined: function(obj) {
+        if (typeof obj === 'undefined' || obj===null)
+            return true;
+        return false;
+    }
+}
+if (typeof exports !== 'undefined') {
+    module.exports = common;
+}
+
+

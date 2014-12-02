@@ -189,66 +189,47 @@ function parseForm(form) {
     });
     return result;
 }
-/**
- * Provides a case insensitive attribute getter
- * @param name
- * @returns {*}
- */
-function caseInsensitiveAttribute(name) {
-    if (typeof name === 'string') {
-        if (this[name])
-            return this[name];
-        //otherwise make a case insensitive search
-        var re = new RegExp('^' + name + '$','i');
-        var p = Object.keys(this).filter(function(x) { return re.test(x); })[0];
-        if (p)
-            return this[p];
-    }
-    return null;
-}
-
-var X_WWW_FORM_URLENCODED =  'application/x-www-form-urlencoded';
 
 PostHandler.prototype.beginRequest = function(context, callback) {
     try {
-        var f = new formidable.IncomingForm(), request = context.request;
-        //add query string
-        if (request.url.indexOf('?') > 0)
-            util._extend(context.params, querystring.parse(request.url.substring(request.url.indexOf('?') + 1)));
-
-        //apply case insensitivity search in params object
-        context.params.attr = caseInsensitiveAttribute;
-
+        var request = context.request;
         //extend params object (parse form data)
         if (typeof request.socket === 'undefined') {
             callback();
-            return;
         }
         else {
-            f.parse(request, function (err, form, files) {
-                if (err) {
-                    callback(err);
-                    return;
-                }
-                try {
-                    //add form
-                    if (form) {
-                        util._extend(context.params, parseForm(form));
+            request.headers = request.headers || {};
+            if (/^application\/x-www-form-urlencoded/i.test(request.headers['content-type'])) {
+                //use formidable to parse request data
+                var f = new formidable.IncomingForm();
+                f.parse(request, function (err, form, files) {
+                    if (err) {
+                        callback(err);
+                        return;
                     }
-                    //add files
-                    if (files)
-                        util._extend(context.params, files);
-                    callback();
-                }
-                catch (e) {
-                    callback(e);
-                }
-            });
-            return;
+                    try {
+                        //add form
+                        if (form) {
+                            util._extend(context.params, parseForm(form));
+                        }
+                        //add files
+                        if (files)
+                            util._extend(context.params, files);
+                        callback();
+                    }
+                    catch (e) {
+                        callback(e);
+                    }
+                });
+            }
+            else {
+                callback();
+            }
+
         }
     }
     catch  (e) {
-        console.log(e)
+        console.log(e);
         callback(new Error("An internal server error occured while parsing request data."));
     }
 

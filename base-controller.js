@@ -1,5 +1,6 @@
 var util = require('util'),
-    mvc = require('./http-mvc');
+    mvc = require('./http-mvc'),
+    common = require('./common');
 /**
  * The base HTTP controller
  * @constructor

@@ -323,7 +323,11 @@ HttpController.prototype.result = function(data)
     }
     else
         throw new Error('Http context cannot be empty at this context.');
-}
+};
+
+HttpController.prototype.forbidden = function (callback) {
+    callback(new common.HttpForbiddenException());
+};
 
 /**
  * Creates a view result object for the given request.
@@ -333,7 +337,7 @@ HttpController.prototype.result = function(data)
 HttpController.prototype.html = function(data)
 {
     return new HttpViewResult(null, data);
-}
+};
 
 /**
  * Creates a view result object for the given request.

@@ -152,6 +152,38 @@ util.inherits(HttpContext, da.classes.DefaultDataContext);
 HttpContext.prototype.init = function() {
     //
 };
+/**
+ * Executes the specified code in unattended mode.
+ * @param {function(function(Error=))} fn
+ * @param {function(Error=)} callback
+ */
+HttpContext.prototype.unattended = function(fn, callback) {
+    var self = this;
+    callback = callback || function() {};
+    //get unattended execution account
+    self.application.config.settings.auth = self.application.config.settings.auth || {};
+    var account = self.application.config.settings.auth.unattendedExecutionAccount,
+        interactiveUser = { name:'anonymous',authenticationType:'None' };
+    //get interactive user
+    if (this.user) {
+        interactiveUser.name = this.user.name;
+        interactiveUser.authenticationType = this.user.authenticationType;
+    }
+    if (account) {
+        self.user = { name:account, authenticationType:'Basic' };
+    }
+    try {
+        fn.call(this, function(err) {
+            //restore user
+            self.user = util._extend({ }, interactiveUser);
+            callback(err);
+        });
+    }
+    catch(e) {
+        self.user = util._extend({ }, interactiveUser);
+        callback(e);
+    }
+};
 
 /**
  * Gets or sets the current culture
