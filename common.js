@@ -162,6 +162,28 @@ var common = {
         if (typeof obj === 'undefined' || obj===null)
             return true;
         return false;
+    },
+    /**
+     * Returns a random integer between a minimum and a maximum value
+     * @param {Number} length
+     * @param {} callback
+     */
+    randomInt: function(min, max) {
+        return Math.floor(Math.random()*max) + min;
+    },
+    /**
+     * Returns a random string based on the length specified
+     * @param {Number} length
+     * @param {} callback
+     */
+    randomChars: function(length) {
+        length = length || 8;
+        var chars = "abcdefghkmnopqursuvwxz2456789ABCDEFHJKLMNPQURSTUVWXYZ";
+        var str = "";
+        for(var i = 0; i < length; i++) {
+            str += chars.substr(this.randomInt(0, chars.length-1),1);
+        }
+        return str;
     }
 }
 if (typeof exports !== 'undefined') {

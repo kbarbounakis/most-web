@@ -1117,6 +1117,14 @@ var web = {
             return new mvc.HttpXmlResult(data);
         },
         /**
+         * Creates an HTML response with the data provided.
+         * @param data
+         * @returns {mvc.HttpViewResult}
+         */
+        createViewResult: function (name, data) {
+            return new mvc.HttpViewResult(name, data);
+        },
+        /**
          * Inherit the prototype methods from HttpController into the given class
          * @param {function} ctor Constructor function which needs to inherit the HttpController
          */
