@@ -1010,15 +1010,19 @@ var web = {
             //process request
             self.current.processRequest(ctx, function(err) {
                 if (err) {
-                    if (err.status==404) {
-                        //escape not found HTTP error (node.js express compatibility)
-                        next();
-                        return;
-                    }
-                    next(err);
+                    ctx.finalize(function() {
+                        if (err.status==404) {
+                            //escape not found HTTP error (node.js express compatibility)
+                            next();
+                            return;
+                        }
+                        next(err);
+                    });
                 }
                 else {
-                    ctx.response.end();
+                    ctx.finalize(function() {
+                        ctx.response.end();
+                    });
                 }
             });
         };
