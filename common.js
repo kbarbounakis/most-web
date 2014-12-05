@@ -184,6 +184,19 @@ var common = {
             str += chars.substr(this.randomInt(0, chars.length-1),1);
         }
         return str;
+    },
+    /**
+     * @param {IncomingMessage|ClientRequest} request
+     * @returns {*}
+     */
+    parseCookies : function(request) {
+        var list = {},
+            rc = request.headers.cookie;
+        rc && rc.split(';').forEach(function (cookie) {
+            var parts = cookie.split('=');
+            list[parts.shift().trim()] = unescape(parts.join('='));
+        });
+        return list;
     }
 }
 if (typeof exports !== 'undefined') {

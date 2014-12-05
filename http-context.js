@@ -153,6 +153,32 @@ HttpContext.prototype.init = function() {
     //
 };
 /**
+ * @param {string} name
+ * @param {*=} value
+ * @param {Date=} expires
+ * @returns {string|undefined}
+ */
+HttpContext.prototype.cookie = function(name, value, expires) {
+    if (typeof value==='undefined')
+    {
+        if (this.request) {
+            var cookies = common.parseCookies(this.request);
+            return cookies[name];
+        }
+        else
+            return null;
+    }
+    else {
+        if (this.response) {
+            if (expires instanceof Date)
+                this.response.setHeader('Set-Cookie',name + '=' + value + ';expires=' + expires.toUTCString());
+            else
+                this.response.setHeader('Set-Cookie',name + '=' + value);
+        }
+    }
+};
+
+/**
  * Executes the specified code in unattended mode.
  * @param {function(function(Error=))} fn
  * @param {function(Error=)} callback
