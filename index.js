@@ -524,7 +524,32 @@ HttpApplication.prototype.decrypt = function (data)
 HttpApplication.prototype.setAuthCookie = function (context, username)
 {
     var value = JSON.stringify({ user:username, dateCreated:new Date() });
-    context.response.setHeader('Set-Cookie','.MAUTH='.concat(this.encypt(value)));
+    var settings = this.config.settings ? (this.config.settings.auth || { }) : { } ;
+    settings.name = settings.name || '.MAUTH';
+    context.response.setHeader('Set-Cookie',settings.name.concat('=', this.encypt(value)));
+};
+
+/**
+ * Sets the authentication cookie that is associated with the given user.
+ * @param {HttpContext} context
+ * @param {String} username
+ */
+HttpApplication.prototype.getAuthCookie = function (context)
+{
+    try {
+        var settings = this.config.settings ? (this.config.settings.auth || { }) : { } ;
+        settings.name = settings.name || '.MAUTH';
+        var cookie = context.cookie(settings.name);
+        if (cookie) {
+            return this.decrypt(cookie);
+        }
+        return null;
+    }
+    catch(e) {
+        console.log('GetAuthCookie failed.');
+        console.log(e.message);
+        return null;
+    }
 };
 
 

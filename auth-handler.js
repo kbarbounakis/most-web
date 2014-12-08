@@ -34,12 +34,14 @@ AuthHandler.prototype.authenticateRequest = function (context, callback) {
     try {
         callback = callback || function() {};
         var cookies = {}, model = context.model('User');
+        var settings = app.current.config.settings ? (app.current.config.settings.auth || { }) : { } ;
+        settings.name = settings.name || '.MAUTH';
         if (context && context.request)
             cookies = AuthHandler.parseCookies(context.request);
-        if (cookies['.MAUTH']) {
+        if (cookies[settings.name]) {
             var str = null;
             try {
-                str = app.current.decrypt(cookies['.MAUTH']);
+                str = app.current.decrypt(cookies[settings.name]);
             }
             catch (e) {
                 //log error (on bad cookie)

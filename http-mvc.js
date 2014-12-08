@@ -14,6 +14,15 @@ function HttpResult() {
     this.contentEncoding = 'utf8';
 }
 /**
+ *
+ * @param {Number=} status
+ */
+HttpResult.prototype.status = function(status) {
+    this.responseStatus = status;
+    return this;
+};
+
+/**
  * Executes an HttpResult instance against an existing HttpContext.
  * @param {HttpContext} context
  * @param {Function} callback
@@ -22,7 +31,7 @@ HttpResult.prototype.execute = function(context, callback) {
     callback = callback || function() {};
     try {
         var response = context.response;
-        response.writeHead(200, {"Content-Type": this.contentType});
+        response.writeHead(this.responseStatus || 200, {"Content-Type": this.contentType});
        if (this.data)
             response.write(this.data, this.contentEncoding);
         callback.call(context);
