@@ -698,7 +698,10 @@ HttpApplication.prototype.createContext = function (request, response) {
  */
 HttpApplication.prototype.executeExternalRequest = function(options, callback) {
     //make request
-    var req = http.request(options, function(res) {
+    var https = require('https'),
+        opts = (typeof options==='string') ? url.parse(options) : options,
+        httpModule = (opts.protocol === 'https') ? https : http;
+    var req = httpModule.request(opts, function(res) {
         res.setEncoding('utf8');
         var data = '';
         res.on('data', function (chunk) {
