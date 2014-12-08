@@ -696,11 +696,11 @@ HttpApplication.prototype.createContext = function (request, response) {
  * @param {*} options The request options
  * @param {Function} callback
  */
-HttpApplication.prototype.executeExternalRequest = function(options, callback) {
+HttpApplication.prototype.executeExternalRequest = function(options,data, callback) {
     //make request
     var https = require('https'),
         opts = (typeof options==='string') ? url.parse(options) : options,
-        httpModule = (opts.protocol === 'https') ? https : http;
+        httpModule = (opts.protocol === 'https:') ? https : http;
     var req = httpModule.request(opts, function(res) {
         res.setEncoding('utf8');
         var data = '';
@@ -721,6 +721,14 @@ HttpApplication.prototype.executeExternalRequest = function(options, callback) {
         //return error
         callback(e);
     });
+
+    if(data)
+    {
+        if (typeof data ==="object" )
+            req.write(JSON.stringify(data));
+        else
+            req.write(data.toString());
+    }
     req.end();
 };
 
@@ -810,7 +818,7 @@ HttpApplication.prototype.executeRequest = function (options, callback) {
         opts.path = uri.path;
         opts.port = uri.port;
         //execute external request
-        this.executeExternalRequest(opts, callback);
+        this.executeExternalRequest(opts,null, callback);
     }
     else {
         //set cookie header (for internal requests)
