@@ -197,6 +197,16 @@ var common = {
             list[parts.shift().trim()] = unescape(parts.join('='));
         });
         return list;
+    },
+    /**
+     *
+     * @param {Error|string|{message:string,stack:string}|*} data
+     */
+    log:function(data) {
+        util.log(data);
+        if (data.stack) {
+            util.log(data.stack);
+        }
     }
 }
 if (typeof exports !== 'undefined') {

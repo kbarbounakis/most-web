@@ -1038,8 +1038,6 @@ var web = {
      */
     runtime: function(options) {
         var self = this;
-        //load extensions
-        self.current.extend();
         return function runtimeParser(req, res, next) {
             //create context
             var ctx = self.current.createContext(req,res);
@@ -1210,6 +1208,8 @@ Object.defineProperty(web, 'current', {
         //initialize current application
         if (__current__.config == null)
             __current__.init();
+        //extend current application
+        __current__.extend();
         //and finally return it
         return __current__;
     },
