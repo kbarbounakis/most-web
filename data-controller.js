@@ -337,8 +337,9 @@ HttpDataController.prototype.filter = function (callback) {
     var filter = params['$filter'],
         select = params['$select'],
         skip = params['$skip'] || 0,
-        orderBy = params['$orderby'],
-        groupBy = params.attr('$group') || params.attr('$groupby') ;
+        orderBy = params['$orderby'] || params.attr('$order'),
+        groupBy = params.attr('$group') || params.attr('$groupby'),
+        expand = params.attr('$expand');
 
     self.model.filter(filter,
         /**
@@ -422,6 +423,14 @@ HttpDataController.prototype.filter = function (callback) {
                                 }
 
                             }
+                        }
+                    }
+                    if (expand) {
+                        if (expand.length>0) {
+                            expand.split(',').map(function(x) { return x.replace(/\s/g,''); }).forEach(function(x) {
+                                if (x.length)
+                                    q.expand(x.replace(/\s/g,''));
+                            });
                         }
                     }
                     //return
