@@ -4,7 +4,9 @@ var common = require('./common'),
     htmlWriter = require('./html'),
     xml = require('most-xml'),
     path = require('path'),
-    da = require("most-data");
+    da = require("most-data"),
+    fs = require('fs'),
+    crypto = require('crypto');
 /**
  * @class HttpResult
  * @constructor
@@ -173,6 +175,106 @@ HttpRedirectResult.prototype.execute = function(context, callback)
     response.writeHead(302, { 'Location': this.url });
     //response.end();
     callback.call(context);
+};
+
+/**
+ * Represents a static file result
+ * @param {string} physicalPath
+ * @constructor
+ */
+function HttpFileResult(physicalPath) {
+    //
+    this.physicalPath = physicalPath;
+}
+
+/**
+ * Inherits HttpAction
+ * */
+util.inherits(HttpFileResult,HttpResult);
+/**
+ *
+ * @param {HttpContext} context
+ * @param {Function} callback
+ */
+HttpFileResult.prototype.execute = function(context, callback)
+{
+    callback = callback || function() {};
+    var physicalPath = this.physicalPath, app = require('./index');
+    fs.exists(physicalPath, function(exists) {
+        if (!exists) {
+            callback(new app.common.HttpNotFoundException());
+        }
+        else {
+            try {
+                fs.stat(physicalPath, function (err, stats) {
+                    if (err) {
+                        callback(err);
+                    }
+                    else {
+                        if (!stats.isFile()) {
+                            callback(new app.common.HttpNotFoundException());
+                        }
+                        else {
+                            //get if-none-match header
+                            var requestETag = context.request.headers['if-none-match'];
+                            //generate responseETag
+                            var md5 = crypto.createHash('md5');
+                            md5.update(stats.mtime.toString());
+                            var responseETag = md5.digest('base64');
+                            if (requestETag) {
+                                if (requestETag == responseETag) {
+                                    context.response.writeHead(304);
+                                    context.response.end();
+                                    callback();
+                                    return;
+                                }
+                            }
+                            //get file extension
+                            var extensionName = path.extname(physicalPath);
+                            //get MIME collection
+                            var web = require('./index')
+                            var mimes = app.current.config.mimes;
+                            var contentType = null, contentEncoding = null;
+                            //find MIME type by extension
+                            var mime = mimes.filter(function (x) {
+                                return x.extension == extensionName;
+                            })[0];
+                            if (mime) {
+                                contentType = mime.type;
+                                if (mime.encoding)
+                                    contentEncoding = mime.encoding;
+                            }
+
+                            //throw exception (MIME not found or access denied)
+                            if (contentType == null) {
+                                callback(new app.common.HttpForbiddenException())
+                            }
+                            else {
+                                //finally process request
+                                fs.readFile(physicalPath, 'binary', function (err, data) {
+                                    if (err) {
+                                        callback(e);
+                                    }
+                                    else {
+                                        context.response.writeHead(200, {
+                                            'Content-Type': contentType + (contentEncoding ? ';charset=' + contentEncoding : ''),
+                                            'ETag': responseETag
+                                        });
+                                        context.response.write(data, "binary");
+                                        callback();
+                                    }
+                                });
+                            }
+                        }
+                    }
+                });
+            }
+            catch (e) {
+                callback(e);
+            }
+        }
+    });
+
 };
 
 /**
@@ -420,6 +522,15 @@ HttpController.prototype.xml = function(data)
 }
 
 /**
+ * Creates a binary file result object by using the specified path.
+ * @returns {HttpFileResult|HttpResult}
+ * */
+HttpController.prototype.file = function(physicalPath)
+{
+    return new HttpFileResult(physicalPath);
+}
+
+/**
  * Creates a redirect result object that redirects to the specified URL.
  * @returns HttpRedirectResult
  * */
@@ -649,6 +760,10 @@ var mvc = {
      * @class HttpRedirectResult
      * */
     HttpRedirectResult:HttpRedirectResult,
+    /**
+     * @class HttpFileResult
+     * */
+    HttpFileResult:HttpFileResult,
     /**
      * @class HttpViewResult
      * */

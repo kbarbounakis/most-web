@@ -69,6 +69,13 @@ StaticHandler.prototype.mapRequest = function(context, callback)
         callback(e);
     }
 };
+/**
+ * @param p
+ * @returns {*}
+ */
+StaticHandler.prototype.mapPath = function(p) {
+    return app.current.mapPath(p)
+};
 
 /*
 StaticHandler.prototype.postMapRequestHandler = function(context)
