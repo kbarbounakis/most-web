@@ -1917,7 +1917,7 @@ function setupModuleLoader(window) {
     ngClassOddDirective,
     ngCspDirective,
     ngCloakDirective,
-    ngControllerDirective,
+    ejsControllerDirective,
     ngFormDirective,
     ngHideDirective,
     ngIfDirective,
@@ -2039,7 +2039,10 @@ function publishExternalAPI(angular){
       $provide.provider({
         $$sanitizeUri: $$SanitizeUriProvider
       });
-      $provide.provider('$compile', $CompileProvider);
+      $provide.provider('$compile', $CompileProvider).directive({
+          ejsController: ejsControllerDirective,
+          ejsBindHtml: ngBindHtmlDirective
+      });
           /*.directive({
             a: htmlAnchorDirective,
             input: inputDirective,
@@ -2056,7 +2059,7 @@ function publishExternalAPI(angular){
             ngClassEven: ngClassEvenDirective,
             ngClassOdd: ngClassOddDirective,
             ngCloak: ngCloakDirective,
-            ngController: ngControllerDirective,
+            ejsController: ejsControllerDirective,
             ngForm: ngFormDirective,
             ngHide: ngHideDirective,
             ngIf: ngIfDirective,
@@ -2195,7 +2198,7 @@ function publishExternalAPI(angular){
  *
  * ### Methods
  * - `controller(name)` - retrieves the controller of the current element or its parent. By default
- *   retrieves controller associated with the `ngController` directive. If `name` is provided as
+ *   retrieves controller associated with the `ejsController` directive. If `name` is provided as
  *   camelCase directive name, then the controller for this directive will be retrieved (e.g.
  *   `'ngModel'`).
  * - `injector()` - retrieves the injector of the current element or its parent.
@@ -2528,7 +2531,7 @@ function jqLiteAddNodes(root, elements) {
 }
 
 function jqLiteController(element, name) {
-  return jqLiteInheritedData(element, '$' + (name || 'ngController' ) + 'Controller');
+  return jqLiteInheritedData(element, '$' + (name || 'ejsController' ) + 'Controller');
 }
 
 function jqLiteInheritedData(element, name, value) {
@@ -12426,7 +12429,7 @@ function $RootScopeProvider(){
        * iterations exceeds 10.
        *
        * Usually, you don't call `$digest()` directly in
-       * {@link ng.directive:ngController controllers} or in
+       * {@link ng.directive:ejsController controllers} or in
        * {@link ng.$compileProvider#directive directives}.
        * Instead, you should call {@link ng.$rootScope.Scope#$apply $apply()} (typically from within
        * a {@link ng.$compileProvider#directive directives}), which will force a `$digest()`.
@@ -18766,10 +18769,10 @@ var ngCloakDirective = ngDirective({
 
 /**
  * @ngdoc directive
- * @name ngController
+ * @name ejsController
  *
  * @description
- * The `ngController` directive attaches a controller class to the view. This is a key aspect of how angular
+ * The `ejsController` directive attaches a controller class to the view. This is a key aspect of how angular
  * supports the principles behind the Model-View-Controller design pattern.
  *
  * MVC components in angular:
@@ -18777,7 +18780,7 @@ var ngCloakDirective = ngDirective({
  * * Model — Models are the properties of a scope; scopes are attached to the DOM where scope properties
  *   are accessed through bindings.
  * * View — The template (HTML with data bindings) that is rendered into the View.
- * * Controller — The `ngController` directive specifies a Controller class; the class contains business
+ * * Controller — The `ejsController` directive specifies a Controller class; the class contains business
  *   logic behind the application to decorate the scope with functions and values
  *
  * Note that you can also attach controllers to the DOM by declaring it in a route definition
@@ -18787,7 +18790,7 @@ var ngCloakDirective = ngDirective({
  *
  * @element ANY
  * @scope
- * @param {expression} ngController Name of a globally accessible constructor function or an
+ * @param {expression} ejsController Name of a globally accessible constructor function or an
  *     {@link guide/expression expression} that on the current scope evaluates to a
  *     constructor function. The controller instance can be published into a scope property
  *     by specifying `as propertyName`.
@@ -18818,7 +18821,7 @@ var ngCloakDirective = ngDirective({
  *
  * This example demonstrates the `controller as` syntax.
  *
- * <example name="ngControllerAs" module="controllerAsExample">
+ * <example name="ejsControllerAs" module="controllerAsExample">
  *   <file name="index.html">
  *    <div id="ctrl-as-exmpl" ng-controller="SettingsController1 as settings">
  *      Name: <input type="text" ng-model="settings.name"/>
@@ -18901,7 +18904,7 @@ var ngCloakDirective = ngDirective({
  *
  * This example demonstrates the "attach to `$scope`" style of controller.
  *
- * <example name="ngController" module="controllerExample">
+ * <example name="ejsController" module="controllerExample">
  *  <file name="index.html">
  *   <div id="ctrl-exmpl" ng-controller="SettingsController2">
  *     Name: <input type="text" ng-model="name"/>
@@ -18983,11 +18986,11 @@ var ngCloakDirective = ngDirective({
  *</example>
 
  */
-var ngControllerDirective = [function() {
+var ejsControllerDirective = [function() {
   return {
     scope: true,
     controller: '@',
-    priority: 500
+    priority: 0
   };
 }];
 
