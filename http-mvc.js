@@ -731,7 +731,17 @@ HttpViewContext.HtmlViewHelper = function($view)
     element: function(obj) {
         if (typeof doc === 'undefined') { doc = $view.context.application.document(); }
         return doc.parentWindow.angular.element(obj);
-    }
+    },
+        lang: function() {
+            var context = $view.context, c= context.culture();
+            if (typeof c === 'string') {
+                if (c.length>=2) {
+                    return c.toLowerCase().substring(0,2);
+                }
+            }
+            //in all cases return default culture
+            return 'en';
+        }
 };
 }
 
