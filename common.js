@@ -164,6 +164,24 @@ var common = {
         return false;
     },
     /**
+     * Checks if the specified object argument is object.
+     * @param {*} obj
+     * @returns {boolean}
+     */
+    isObject: function(obj) {
+    if (typeof obj === 'object' && obj!==null)
+        return true;
+    return false;
+},
+    /**
+     * Checks if the specified object argument is numeric or not.
+     * @param {*} obj
+     * @returns {boolean}
+     */
+    isNumber: function(n) {
+    return !isNaN(parseFloat(n)) && isFinite(n);
+    },
+    /**
      * Returns a random integer between a minimum and a maximum value
      * @param {Number} length
      * @param {} callback

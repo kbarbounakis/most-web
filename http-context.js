@@ -180,12 +180,24 @@ HttpContext.prototype.cookie = function(name, value, expires) {
 
 /**
  * Executes the specified code in unattended mode.
- * @param {function(function(Error=))} fn
- * @param {function(Error=)} callback
+ * @param {function(function(Error=, *=))} fn
+ * @param {function(Error=, *=)} callback
  */
 HttpContext.prototype.unattended = function(fn, callback) {
     var self = this;
     callback = callback || function() {};
+    fn = fn || function() {};
+    if (self._unattended) {
+        try {
+            fn.call(self, function(err, result) {
+                callback(err, result);
+            });
+        }
+        catch(e) {
+            callback(e);
+        }
+        return;
+    }
     //get unattended execution account
     self.application.config.settings.auth = self.application.config.settings.auth || {};
     var account = self.application.config.settings.auth.unattendedExecutionAccount,
@@ -197,16 +209,22 @@ HttpContext.prototype.unattended = function(fn, callback) {
     }
     if (account) {
         self.user = { name:account, authenticationType:'Basic' };
+        self.interactiveUser = interactiveUser;
     }
     try {
-        fn.call(this, function(err) {
+        self._unattended = true;
+        fn.call(self, function(err, result) {
             //restore user
             self.user = util._extend({ }, interactiveUser);
-            callback(err);
+            delete self.interactiveUser;
+            delete self._unattended;
+            callback(err, result);
         });
     }
     catch(e) {
         self.user = util._extend({ }, interactiveUser);
+        delete self.interactiveUser;
+        delete self._unattended;
         callback(e);
     }
 };
