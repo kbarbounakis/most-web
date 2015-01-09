@@ -197,7 +197,21 @@ var directives = {
                                  * @type {Array}
                                  */
                                 var roles = (attrs.ejsUserInRole || '').split(',');
-                                var inRole = (user.groups.filter(function(x) { return (roles.indexOf(x.name)>=0); }).length>0);
+                                var inRole = (user.groups.filter(function(x) {
+                                    return (roles.indexOf(x.name)>=0);
+                                }).length>0);
+                                //validate not statement e.g. ejs-user-in-role='!Administrators'
+                                if (!inRole) {
+                                    roles.forEach(function(x) {
+                                        if (!inRole) {
+                                            if (x.indexOf('!')==0) {
+                                                inRole = (user.groups.filter(function(y) {
+                                                    return (x.substr(1).indexOf(y.name)>=0);
+                                                }).length==0);
+                                            }
+                                        }
+                                    });
+                                }
                                 if (!inRole) {
                                     element.replaceWith(null);
                                 }

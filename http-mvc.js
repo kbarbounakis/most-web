@@ -180,11 +180,13 @@ HttpRedirectResult.prototype.execute = function(context, callback)
 /**
  * Represents a static file result
  * @param {string} physicalPath
+ * @param {string=} fileName
  * @constructor
  */
-function HttpFileResult(physicalPath) {
+function HttpFileResult(physicalPath, fileName) {
     //
     this.physicalPath = physicalPath;
+    this.fileName = fileName;
 }
 
 /**
@@ -199,7 +201,7 @@ util.inherits(HttpFileResult,HttpResult);
 HttpFileResult.prototype.execute = function(context, callback)
 {
     callback = callback || function() {};
-    var physicalPath = this.physicalPath, app = require('./index');
+    var physicalPath = this.physicalPath, fileName = this.fileName,  app = require('./index');
     fs.exists(physicalPath, function(exists) {
         if (!exists) {
             callback(new app.common.HttpNotFoundException());
@@ -229,12 +231,13 @@ HttpFileResult.prototype.execute = function(context, callback)
                                     return;
                                 }
                             }
+                            var contentType = null;
                             //get file extension
-                            var extensionName = path.extname(physicalPath);
+                            var extensionName = path.extname(fileName || physicalPath);
                             //get MIME collection
                             var web = require('./index')
                             var mimes = app.current.config.mimes;
-                            var contentType = null, contentEncoding = null;
+                            var contentEncoding = null;
                             //find MIME type by extension
                             var mime = mimes.filter(function (x) {
                                 return x.extension == extensionName;
@@ -246,16 +249,17 @@ HttpFileResult.prototype.execute = function(context, callback)
                             }
 
                             //throw exception (MIME not found or access denied)
-                            if (contentType == null) {
+                            if (web.common.isNullOrUndefined(contentType)) {
                                 callback(new app.common.HttpForbiddenException())
                             }
                             else {
-                                //finally process request
+                                /*//finally process request
                                 fs.readFile(physicalPath, 'binary', function (err, data) {
                                     if (err) {
                                         callback(e);
                                     }
                                     else {
+                                        //add Content-Disposition: attachment; filename="<file name.ext>"
                                         context.response.writeHead(200, {
                                             'Content-Type': contentType + (contentEncoding ? ';charset=' + contentEncoding : ''),
                                             'ETag': responseETag
@@ -263,6 +267,21 @@ HttpFileResult.prototype.execute = function(context, callback)
                                         context.response.write(data, "binary");
                                         callback();
                                     }
+                                });*/
+                                //create read stream
+                                var source = fs.createReadStream(physicalPath);
+                                //add Content-Disposition: attachment; filename="<file name.ext>"
+                                context.response.writeHead(200, {
+                                    'Content-Type': contentType + (contentEncoding ? ';charset=' + contentEncoding : ''),
+                                    'ETag': responseETag
+                                });
+                                //copy file
+                                source.pipe(context.response);
+                                source.on('end', function() {
+                                    callback();
+                                });
+                                source.on('error', function(err) {
+                                    callback(err);
                                 });
                             }
                         }
@@ -523,11 +542,13 @@ HttpController.prototype.xml = function(data)
 
 /**
  * Creates a binary file result object by using the specified path.
+ * @param {string}  physicalPath
+ * @param {string=}  fileName
  * @returns {HttpFileResult|HttpResult}
  * */
-HttpController.prototype.file = function(physicalPath)
+HttpController.prototype.file = function(physicalPath, fileName)
 {
-    return new HttpFileResult(physicalPath);
+    return new HttpFileResult(physicalPath, fileName);
 }
 
 /**

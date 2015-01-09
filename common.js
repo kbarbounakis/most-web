@@ -9,6 +9,17 @@ function AbstractMethodException(message) {
 util.inherits(AbstractMethodException, Error);
 
 /**
+ * @class FileNotFoundException
+ * @param {number=} status
+ * @constructor
+ * @augments Error
+ */
+function FileNotFoundException(message) {
+
+    this.message = message || 'File not found';
+}
+util.inherits(FileNotFoundException, Error);
+/**
  *
  * @param {number=} status
  * @param {string=} message
@@ -95,11 +106,170 @@ function isFunction( fn ) {
     return typeof fn === 'function';
 };
 
+/**
+ * @class UnknownValue
+ * @constructor
+ */
+function UnknownValue() {
+    //
+}
+
+UnknownValue.prototype.valueOf = function() { return null; }
+
+UnknownValue.prototype.toJSON = function() { return null; }
+
+UnknownValue.DateTimeRegex = /^(\d{4})(?:-?W(\d+)(?:-?(\d+)D?)?|(?:-(\d+))?-(\d+))(?:[T ](\d+):(\d+)(?::(\d+)(?:\.(\d+))?)?)?(?:Z(-?\d*))?$/g;
+UnknownValue.BooleanTrueRegex = /^true$/ig;
+UnknownValue.BooleanFalseRegex = /^false$/ig;
+UnknownValue.NullRegex = /^null$/ig;
+UnknownValue.UndefinedRegex = /^undefined$/ig;
+UnknownValue.IntegerRegex =/^[-+]?\d+$/g;
+UnknownValue.FloatRegex =/^[+-]?\d+(\.\d+)?$/g;
+/**
+ * @class UnknownPropertyDescriptor
+ * @constructor
+ */
+function UnknownPropertyDescriptor(obj, name) {
+    Object.defineProperty(this, 'value', { configurable:false, enumerable:true, get: function() { return obj[name]; }, set: function(value) { obj[name]=value; } });
+    Object.defineProperty(this, 'name', { configurable:false, enumerable:true, get: function() { return name; } });
+}
+/**
+ * @param {string} value
+ */
+UnknownValue.convert = function(value) {
+    var result;
+    if ((typeof value === 'string'))
+    {
+        if (value.length==0) {
+            result = value
+        }
+        if (value.match(UnknownValue.BooleanTrueRegex)) {
+            result = true;
+        }
+        else if (value.match(UnknownValue.BooleanFalseRegex)) {
+            result = false;
+        }
+        else if (value.match(UnknownValue.NullRegex) || value.match(UnknownValue.UndefinedRegex)) {
+            result = null;
+        }
+        else if (value.match(UnknownValue.IntegerRegex)) {
+            result = parseInt(value);
+        }
+        else if (value.match(UnknownValue.FloatRegex)) {
+            result = parseFloat(value);
+        }
+        else if (value.match(UnknownValue.DateTimeRegex)) {
+            result = new Date(Date.parse(value));
+        }
+        else {
+            result = value;
+        }
+    }
+    else {
+        result = value;
+    }
+    return result;
+}
+
+/**
+ *
+ * @param {*} origin
+ * @param {string} expr
+ * @param {string} value
+ * @param {*=} options
+ * @returns {*}
+ */
+UnknownValue.extend = function(origin, expr, value, options) {
+
+    options = options || { convertValues:false };
+    //find base notation
+    var match = /(^\w+)\[/.exec(expr), name, descriptor, expr1;
+    if (match) {
+        //get property name
+        name = match[1];
+        //validate array property
+        if (/^\d+$/g.test(name)) {
+            //property is an array
+            if (!util.isArray(origin.value))
+                origin.value = [];
+            // get new expression
+            expr1 = expr.substr(match.index + match[1].length);
+            UnknownValue.extend(origin, expr1, value);
+        }
+        else {
+            //set property value (unknown)
+            origin[name] = origin[name] || new UnknownValue();
+            descriptor = new UnknownPropertyDescriptor(origin, name);
+            // get new expression
+            expr1 = expr.substr(match.index + match[1].length);
+            UnknownValue.extend(descriptor, expr1, value);
+        }
+    }
+    else if (expr.indexOf('[')==0) {
+        //get property
+        var re = /\[(.*?)\]/g;
+        match = re.exec(expr);
+        if (match) {
+            name = match[1];
+            // get new expression
+            expr1 = expr.substr(match.index + match[0].length);
+            if (/^\d+$/g.test(name)) {
+                //property is an array
+                if (!util.isArray(origin.value))
+                    origin.value = [];
+            }
+            if (expr1.length==0) {
+                if (origin.value instanceof UnknownValue) {
+                    origin.value = {};
+                }
+                var typedValue;
+                //convert string value
+                if ((typeof value === 'string') && options.convertValues) {
+                    typedValue = UnknownValue.convert(value);
+                }
+                else {
+                    typedValue = value;
+                }
+                if (util.isArray(origin.value))
+                    origin.value.push(typedValue);
+                else
+                    origin.value[name] = typedValue;
+            }
+            else {
+                if (origin.value instanceof UnknownValue) {
+                    origin.value = { };
+                };
+                origin.value[name] = origin.value[name] || new UnknownValue();
+                descriptor = new UnknownPropertyDescriptor(origin.value, name);
+                UnknownValue.extend(descriptor, expr1, value);
+            }
+        }
+        else {
+            throw new Error('Invalid object property notation. Expected [name]');
+        }
+    }
+    else if (/^\w+$/.test(expr)) {
+        if (options.convertValues)
+            origin[expr] = UnknownValue.convert(value);
+        else
+            origin[expr] = value;
+    }
+    else {
+        throw new Error('Invalid object property notation. Expected property[name] or [name]');
+    }
+    return origin;
+}
+
 var common = {
     /**
      * @class AbstractMethodException
      * */
     AbstractMethodException : AbstractMethodException,
+    /**
+     * @class FileNotFoundException
+     * @augments Error
+     * */
+    FileNotFoundException : FileNotFoundException,
     /**
      * @class HttpException
      * */
@@ -136,10 +306,12 @@ var common = {
      * */
     getFunctionParams:getFunctionParams,
     /**
-     * @param fn {Function}
+     * @param {function|*} fn
      * @returns {Boolean}
      * */
-    isFunction:isFunction,
+    isFunction:function(fn) {
+        return isFunction(fn);
+    },
     /**
      * Checks if the specified string argument is empty, undefined or null.
      * @param {string} s
@@ -204,6 +376,58 @@ var common = {
         return str;
     },
     /**
+     * Converts a base-26 formatted string to the equivalent integer
+     * @param {string} s A base-26 formatted string e.g. aaaaaaaa for 0, baaaaaaa for 1 etc
+     * @return {number} The equivalent integer value
+     */
+    convertFromBase26 : function(s) {
+        var num = 0;
+        if (!/[a-z]{8}/.test(s)) {
+            throw new Error('Invalid base-26 format.');
+        }
+        var a = 'a'.charCodeAt(0)
+        for (var i = 7; i >=0; i--) {
+            num = (num * 26) + (s[i].charCodeAt(0) - a);
+        }
+        return num;
+    },
+    /**
+     * Converts an integer to the equivalent base-26 formatted string
+     * @param {number} x The integer to be converted
+     * @return {string} The equivalent string value
+     */
+    convertToBase26: function(x) {
+        var num = parseInt(x);
+        if (num<0) {
+            throw new Error('A non-positive integer cannot be converted to base-26 format.');
+        }
+        if (num>208827064575) {
+            throw new Error('A positive integer bigger than 208827064575 cannot be converted to base-26 format.');
+        }
+        var out = "", length= 1, a = 'a'.charCodeAt(0);
+        while(length<=8)
+        {
+            out += String.fromCharCode(a + (num % 26))
+            num = Math.floor(num / 26);
+            length += 1;
+        }
+        return out;
+    },
+    /**
+     * Returns a random string based on the length specified
+     * @param {Number} length
+     * @param {} callback
+     */
+    randomHex: function(length) {
+        length = (length || 8)*2;
+        var chars = "abcdef1234567890";
+        var str = "";
+        for(var i = 0; i < length; i++) {
+            str += chars.substr(this.randomInt(0, chars.length-1),1);
+        }
+        return str;
+    },
+    /**
      * @param {IncomingMessage|ClientRequest} request
      * @returns {*}
      */
@@ -218,6 +442,24 @@ var common = {
     },
     /**
      *
+     * @param {*} form
+     * @returns {*}
+     */
+    parseForm : function(form) {
+        var result = {};
+        if (typeof form === 'undefined' || form==null)
+            return result;
+        var keys = Object.keys(form);
+        keys.forEach(function(key) {
+            if (form.hasOwnProperty(key))
+            {
+                UnknownValue.extend(result, key, form[key])
+            }
+        });
+        return result;
+    },
+    /**
+     *
      * @param {Error|string|{message:string,stack:string}|*} data
      */
     log:function(data) {
@@ -226,7 +468,8 @@ var common = {
             util.log(data.stack);
         }
     }
-}
+};
+
 if (typeof exports !== 'undefined') {
     module.exports = common;
 }

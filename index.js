@@ -3,7 +3,9 @@
  */
 'use strict';
 
-var common = require('./common'), mvc = require('./http-mvc'),
+var common = require('./common'),
+    files = require('./files'),
+    mvc = require('./http-mvc'),
     html = require('./html'), util = require('util'), array = require('most-array'),
     async = require('async'), path = require("path"), fs = require("fs"),
     url = require('url'),
@@ -351,6 +353,8 @@ HttpApplication.prototype.init = function () {
         { name:'auth',type:'./auth-handler' },
         { name:'basic-auth',type:'./basic-auth-handler' },
         { name:'mvc',type:'./view-handler' },
+        { name:'multipart',type:'./multipart-handler' },
+        { name:'json',type:'./json-handler' },
         { name:'post',type:'./post-handler' },
         { name:'directive',type:'./directive-handler' }
     ];
@@ -1191,7 +1195,11 @@ var web = {
     /**
      * @type {common|*}
      */
-    common: common
+    common: common,
+    /**
+     * @type {files|*}
+     */
+    files: files
 };
 
 /**

@@ -23,26 +23,26 @@ function AngularServerModule() {
 }
 /**
  * @param {string} name
- * @param {function|Array|*} ctor
- * @returns AngularServerModule
+ * @param {function|Array|*=} ctor
+ * @returns AngularServerModule|function
  */
 AngularServerModule.prototype.service = function(name, ctor) { };
 /**
  * @param {string} name
- * @param {function|Array|*} ctor
- * @returns AngularServerModule
+ * @param {function|Array|*=} ctor
+ * @returns AngularServerModule|function
  */
 AngularServerModule.prototype.directive = function(name, ctor) { };
 /**
  * @param {string} name
- * @param {function|Array|*} ctor
- * @returns AngularServerModule
+ * @param {function|Array|*=} ctor
+ * @returns AngularServerModule|function
  */
 AngularServerModule.prototype.filter = function(name, ctor) { };
 /**
  * @param {string} name
- * @param {function|Array|*} ctor
- * @returns AngularServerModule
+ * @param {function|Array|*=} ctor
+ * @returns AngularServerModule|function
  */
 AngularServerModule.prototype.controller = function(name, ctor) { };
 
@@ -108,7 +108,7 @@ var ng = {
             app.module = {
                 /**
                  * @param {string} name
-                 * @param {function} ctor
+                 * @param {function=} ctor
                  * @returns {*}
                  */
                 directive: function(name, ctor) {
@@ -120,7 +120,7 @@ var ng = {
                 directives: {},
                 /**
                  * @param {string} name
-                 * @param {function} ctor
+                 * @param {function=} ctor
                  * @returns {*}
                  */
                 service: function(name, ctor) {
@@ -132,7 +132,7 @@ var ng = {
                 services: {},
                 /**
                  * @param {string} name
-                 * @param {function} ctor
+                 * @param {function=} ctor
                  * @returns {*}
                  */
                 filter: function(name, ctor) {
@@ -144,7 +144,7 @@ var ng = {
                 filters:{},
                 /**
                  * @param {string} name
-                 * @param {function} ctor
+                 * @param {function=} ctor
                  * @returns {*}
                  */
                 controller: function(name, ctor) {
