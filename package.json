@@ -1,6 +1,6 @@
 {
   "name": "most-web",
-  "version": "1.7.7",
+  "version": "1.7.8",
   "description": "Most Web Framework - A JavaScript web framework for building scalable web application under node.js",
   "homepage": "http://www.most-framework.com/",
   "repository": {
@@ -37,7 +37,7 @@
     "most-xml": "~0.3.0",
     "most-data": "~0.1.9",
     "body-parser": "~1.10.1",
-    "tingodb":"~0.3.1"
+    "tingodb": "~0.3.1"
   },
   "main": "index",
   "scripts": {},
