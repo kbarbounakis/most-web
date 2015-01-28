@@ -459,6 +459,15 @@ var common = {
         return result;
     },
     /**
+     * Parses any value or string and returns the resulted object.
+     * @param {*} any
+     * @returns {*}
+     */
+    parseValue: function(any) {
+            return UnknownValue.convert(any);
+
+    },
+    /**
      *
      * @param {Error|string|{message:string,stack:string}|*} data
      */
