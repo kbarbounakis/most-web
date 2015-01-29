@@ -468,7 +468,7 @@ var common = {
 
     },
     /**
-     * Parses a value and returns the equivalent integer.
+     * Parses any value and returns the equivalent integer.
      * @param {*} any
      * @returns {*}
      */
@@ -476,7 +476,7 @@ var common = {
         return parseInt(any) || 0;
     },
     /**
-     * Parses a value and returns the equivalent float number.
+     * Parses any value and returns the equivalent float number.
      * @param {*} any
      * @returns {*}
      */
