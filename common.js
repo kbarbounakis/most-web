@@ -468,6 +468,22 @@ var common = {
 
     },
     /**
+     * Parses a value and returns the equivalent integer.
+     * @param {*} any
+     * @returns {*}
+     */
+    parseInt: function(any) {
+        return parseInt(any) || 0;
+    },
+    /**
+     * Parses a value and returns the equivalent float number.
+     * @param {*} any
+     * @returns {*}
+     */
+    parseFloat: function(any) {
+        return parseFloat(any) || 0;
+    },
+    /**
      *
      * @param {Error|string|{message:string,stack:string}|*} data
      */
