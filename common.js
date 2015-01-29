@@ -492,6 +492,22 @@ var common = {
         if (data.stack) {
             util.log(data.stack);
         }
+    },
+    /**
+     * Validates the given parameter and returns true if this represents a relative url. Otherwise returns false.
+     * @param {string} virtualPath
+     * @return {boolean}
+     */
+    isRelativeUrl: function(virtualPath) {
+        if (this.isNullOrUndefined(virtualPath))
+            return false;
+        if (typeof virtualPath !== 'string')
+            throw new Error('Invalid virtualPath argument. Must be a string');
+        if (/^(https?|file|ftps?|mailto|javascript|data:image\/[^;]{2,9};):/i.test(virtualPath))
+            return false;
+        if (virtualPath.indexOf('/')!=0)
+            return !(virtualPath[0]=='\\');
+        return true;
     }
 };
 
