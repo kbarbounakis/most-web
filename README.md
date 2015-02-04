@@ -4,6 +4,7 @@ MOST Web Framework is full-featured MVC framework for building scalable data-dri
 ![enter image description here](http://www.themost.io/assets/images/most_logo_s_320.png)
 
 The following list contains some of the MOST Web Framework features:
+
 **Model**
  - Integrated JSON Data Modelling 
  - Model inheritance 
