@@ -72,6 +72,13 @@ function HttpMethodNotAllowed(message) {
 }
 util.inherits(HttpMethodNotAllowed, HttpException);
 /**
+ * HTTP 401 Unauthorized Exception class
+ * */
+function HttpUnauthorizedException(message) {
+    HttpUnauthorizedException.super_.call(this, 401, message || 'Unauthorized', this.constructor);
+}
+util.inherits(HttpUnauthorizedException, HttpException);
+/**
  * HTTP 403 Forbidden Exception class
  * */
 function HttpForbiddenException(message) {
@@ -293,6 +300,10 @@ var common = {
      * @class HttpBadRequest
      * */
     HttpBadRequest: HttpBadRequest,
+    /**
+     * @class HttpUnauthorizedException
+     * */
+    HttpUnauthorizedException: HttpUnauthorizedException,
     /**
      * @class HttpForbiddenException
      * */

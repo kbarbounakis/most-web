@@ -20,7 +20,7 @@ if (typeof exports !== 'undefined') {
                         else {
                             if (result) {
                                 if (!result.enabled) {
-                                    callback(new Error('The account is disabled. Please contact your system administrator.'));
+                                    callback(new web.common.HttpForbiddenException('The account is disabled. Please contact your system administrator.'));
                                     return;
                                 }
                                 //user was found
@@ -60,19 +60,19 @@ if (typeof exports !== 'undefined') {
                                                 callback();
                                             }
                                             else {
-                                                callback(new Error('Unknown username or bad password.'));
+                                                callback(new web.common.HttpUnauthorizedException('Unknown username or bad password.'));
                                             }
                                         }
                                         else {
                                             console.log(util.log('User credentials cannot be found (%s).', userName));
-                                            callback(new Error('Unknown username or bad password.'));
+                                            callback(new web.common.HttpUnauthorizedException('Unknown username or bad password.'));
                                         }
                                     }
                                 });
                             }
                             else {
                                 //user was not found
-                                callback(null, self.view({message: 'Unknown username. Please try again.'}));
+                                callback(new web.common.HttpUnauthorizedException('Unknown username. Please try again.'));
                             }
                         }
                     });

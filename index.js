@@ -308,6 +308,25 @@ function HttpApplication() {
     this.module = null;
     //init module
     ng.init(this);
+    //register auth service
+    var self = this;
+    self.module.service('$auth', function($context) {
+        try {
+            //ensure settings
+            self.config.settings.auth = self.config.settings.auth || { };
+            var providerPath = self.config.settings.auth.provider || './auth-service';
+            //get auth provider
+            if (providerPath.indexOf('/')==0)
+                providerPath = self.mapPath(providerPath);
+            var svc = require(providerPath);
+            if (typeof svc.createInstance !== 'function')
+                throw new Error('Invalid authentication provider module.');
+            return svc.createInstance($context);
+        }
+        catch (e) {
+            throw e;
+        }
+    });
 
 }
 util.inherits(HttpApplication, da.types.EventEmitter2);
@@ -524,10 +543,17 @@ HttpApplication.prototype.decrypt = function (data)
  * Sets the authentication cookie that is associated with the given user.
  * @param {HttpContext} context
  * @param {String} username
+ * @param {*=} options
  */
-HttpApplication.prototype.setAuthCookie = function (context, username)
+HttpApplication.prototype.setAuthCookie = function (context, username, options)
 {
-    var value = JSON.stringify({ user:username, dateCreated:new Date() });
+    var defaultOptions = { user:username, dateCreated:new Date()}, value;
+    if (typeof options === 'object') {
+        value = JSON.stringify(util._extend(options, defaultOptions));
+    }
+    else {
+        value = JSON.stringify(defaultOptions);
+    }
     var settings = this.config.settings ? (this.config.settings.auth || { }) : { } ;
     settings.name = settings.name || '.MAUTH';
     context.response.setHeader('Set-Cookie',settings.name.concat('=', this.encypt(value)));
