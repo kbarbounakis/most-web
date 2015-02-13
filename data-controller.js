@@ -76,7 +76,7 @@ HttpDataController.prototype.edit = function (callback) {
             context = self.context;
         context.handle(['POST', 'PUT'], function() {
             //get context param
-            var target = context.params[self.model.name] || context.params.data;
+            var target = self.model.convert(context.params[self.model.name] || context.params.data, true);
             if (target) {
                 self.model.save(target, function(err)
                 {

@@ -28,15 +28,16 @@
     }
   ],
   "dependencies": {
-    "string": "1.5.1",
     "async": "0.2.10",
-    "formidable": "1.0.14",
-    "ejs": "0.8.5",
-    "domino": "1.0.18",
-    "most-array": "~1.0.1",
-    "most-xml": "~0.3.0",
-    "most-data": "~0.1.9",
     "body-parser": "~1.10.1",
+    "domino": "1.0.18",
+    "ejs": "0.8.5",
+    "formidable": "1.0.14",
+    "most-array": "~1.0.1",
+    "most-data": "~0.1.9",
+    "most-xml": "~0.3.0",
+    "node-cache": "^1.1.0",
+    "string": "1.5.1",
     "tingodb": "~0.3.1"
   },
   "main": "index",

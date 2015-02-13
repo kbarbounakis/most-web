@@ -327,6 +327,19 @@ function HttpApplication() {
             throw e;
         }
     });
+    var $cache;
+    self.module.service('$cache', function() {
+        try {
+            if (!web.common.isNullOrUndefined($cache))
+                return $cache;
+            var NodeCache = require( "node-cache" );
+            $cache = new NodeCache();
+            return $cache;
+        }
+        catch (e) {
+            throw e;
+        }
+    });
 
 }
 util.inherits(HttpApplication, da.types.EventEmitter2);

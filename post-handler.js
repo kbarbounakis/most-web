@@ -106,7 +106,7 @@ function extend(origin, expr, value, options) {
                 origin.value = [];
             // get new expression
             expr1 = expr.substr(match.index + match[1].length);
-            extend(origin, expr1, value);
+            extend(origin, expr1, value, options);
         }
         else {
             //set property value (unknown)
@@ -114,7 +114,7 @@ function extend(origin, expr, value, options) {
             descriptor = new UnknownPropertyDescriptor(origin, name);
             // get new expression
             expr1 = expr.substr(match.index + match[1].length);
-            extend(descriptor, expr1, value);
+            extend(descriptor, expr1, value, options);
         }
     }
     else if (expr.indexOf('[')==0) {
@@ -153,7 +153,7 @@ function extend(origin, expr, value, options) {
                 };
                 origin.value[name] = origin.value[name] || new UnknownValue();
                 descriptor = new UnknownPropertyDescriptor(origin.value, name);
-                extend(descriptor, expr1, value);
+                extend(descriptor, expr1, value, options);
             }
         }
         else {
@@ -184,7 +184,7 @@ function parseForm(form) {
     keys.forEach(function(key) {
         if (form.hasOwnProperty(key))
         {
-            extend(result, key, form[key])
+            extend(result, key, form[key]);
         }
     });
     return result;
