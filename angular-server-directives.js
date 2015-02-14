@@ -1,5 +1,12 @@
 /**
- * Created by Kyriakos on 1/10/2014.
+ * MOST Web Framework
+ * A JavaScript Web Framework
+ * http://themost.io
+ *
+ * Copyright (c) 2014, Kyriakos Barbounakis k.barbounakis@gmail.com, Anthi Oikonomou anthioikonomou@gmail.com
+ *
+ * Released under the BSD3-Clause license
+ * Date: 2014-10-01
  */
 var web = require("./index");
 

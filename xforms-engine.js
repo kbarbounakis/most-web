@@ -1,9 +1,13 @@
 /**
+ * MOST Web Framework
+ * A JavaScript Web Framework
+ * http://themost.io
  *
- * XFORMS ABSTRACT VIEW ENGINE
+ * Copyright (c) 2014, Kyriakos Barbounakis k.barbounakis@gmail.com, Anthi Oikonomou anthioikonomou@gmail.com
  *
+ * Released under the BSD3-Clause license
+ * Date: 2014-05-07
  */
-
 var xforms = require('xforms'), xml = require('most-xml'), fs = require('fs');
 /**
  * @class XFormsEngine

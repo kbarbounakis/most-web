@@ -1,5 +1,12 @@
 /**
- * Created by kbarbounakis on 2/7/2014.
+ * MOST Web Framework
+ * A JavaScript Web Framework
+ * http://themost.io
+ *
+ * Copyright (c) 2014, Kyriakos Barbounakis k.barbounakis@gmail.com, Anthi Oikonomou anthioikonomou@gmail.com
+ *
+ * Released under the BSD3-Clause license
+ * Date: 2014-07-02
  */
 var app = require('./index'),
     formidable = require('formidable'),

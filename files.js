@@ -1,5 +1,12 @@
 /**
- * Created by Kyriakos Barbounakis<k.barbounakis@gmail.com> on 5/1/2015.
+ * MOST Web Framework
+ * A JavaScript Web Framework
+ * http://themost.io
+ *
+ * Copyright (c) 2014, Kyriakos Barbounakis k.barbounakis@gmail.com, Anthi Oikonomou anthioikonomou@gmail.com
+ *
+ * Released under the BSD3-Clause license
+ * Date: 2015-01-05
  */
 var util = require('util'),
     path=require('path'),

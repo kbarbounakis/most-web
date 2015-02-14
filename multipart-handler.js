@@ -1,5 +1,12 @@
 /**
- * Created by Kyriakos Barbounakis<k.barbounakis@gmail.com> on 2/12/2014.
+ * MOST Web Framework
+ * A JavaScript Web Framework
+ * http://themost.io
+ *
+ * Copyright (c) 2014, Kyriakos Barbounakis k.barbounakis@gmail.com, Anthi Oikonomou anthioikonomou@gmail.com
+ *
+ * Released under the BSD3-Clause license
+ * Date: 2014-12-02
  */
 var formidable = require('formidable'), util = require('util');
 function MultipartHandler() {
