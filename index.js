@@ -387,10 +387,10 @@ HttpApplication.prototype.init = function () {
     var handlers = self.config.handlers || [];
     //default handlers
     var defaultHandlers = [
-        { name:'static',type:'./static-handler' },
         { name:'query',type:'./querystring-handler' },
         { name:'auth',type:'./auth-handler' },
         { name:'basic-auth',type:'./basic-auth-handler' },
+        { name:'static',type:'./static-handler' },
         { name:'mvc',type:'./view-handler' },
         { name:'multipart',type:'./multipart-handler' },
         { name:'json',type:'./json-handler' },
@@ -650,22 +650,32 @@ HttpApplication.prototype.processRequest = function (context, callback) {
                                                         callback.call(context, err);
                                                     }
                                                     else {
-                                                        //6. processRequest
-                                                        if (context.request.currentHandler != null)
-                                                            context.request.currentHandler.processRequest(context, function (err) {
-                                                                if (err) {
-                                                                    callback.call(context, err);
-                                                                }
-                                                                else {
-                                                                    //7. endRequest
-                                                                    context.emit('endRequest', context, function (err) {
-                                                                        callback.call(context, err);
-                                                                    });
-                                                                }
+                                                        //process HEAD request
+                                                        if (context.request.method==='HEAD') {
+                                                            //7. endRequest
+                                                            context.emit('endRequest', context, function (err) {
+                                                                callback.call(context, err);
                                                             });
-                                                        else {
-                                                            callback.call(context, new common.HttpNotFoundException());
                                                         }
+                                                        else {
+                                                            //6. processRequest
+                                                            if (context.request.currentHandler != null)
+                                                                context.request.currentHandler.processRequest(context, function (err) {
+                                                                    if (err) {
+                                                                        callback.call(context, err);
+                                                                    }
+                                                                    else {
+                                                                        //7. endRequest
+                                                                        context.emit('endRequest', context, function (err) {
+                                                                            callback.call(context, err);
+                                                                        });
+                                                                    }
+                                                                });
+                                                            else {
+                                                                callback.call(context, new common.HttpNotFoundException());
+                                                            }
+                                                        }
+
                                                     }
                                                 });
                                             }

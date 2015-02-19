@@ -8,7 +8,7 @@
  * Released under the BSD3-Clause license
  * Date: 2014-11-15
  */
-var web = web = require('./index');
+var web = web = require('./index'), crypto = require('crypto'), util = require('util');
 
 if (typeof exports !== 'undefined') {
     /**

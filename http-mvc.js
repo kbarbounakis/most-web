@@ -697,7 +697,11 @@ util.inherits(HttpViewContext, da.types.EventEmitter2);
 HttpViewContext.prototype.render = function(url, callback) {
     callback = callback || function() {};
     var app = require('./index');
-    app.current.executeRequest( { url: url, cookie: this.context.request.headers.cookie }, function(err, result) {
+    //get response cookie, if any
+    var requestCookie = this.context.response.getHeader('set-cookie');
+    if (typeof this.context.request.headers.cookie !== 'undefined')
+        requestCookie = this.context.request.headers.cookie;
+    app.current.executeRequest( { url: url, cookie: requestCookie }, function(err, result) {
         if (err) {
             callback(err);
         }
