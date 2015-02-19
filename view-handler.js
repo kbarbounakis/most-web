@@ -271,13 +271,19 @@ ViewHandler.prototype.postMapRequest = function (context, callback) {
                 }
             }
             else if (context.format=='json') {
-                if (context.request.body) {
-                    //load json
-                    //todo::validate current model
-                    var obj = JSON.parse(context.request.body)
-                    context.params.data = obj;
-                    callback();
-                    return;
+                if (typeof context.request.body === 'string') {
+                    //parse json data
+                    try {
+                        var obj = JSON.parse(context.request.body)
+                        //set context data
+                        context.params.data = obj;
+                    }
+                    catch(e) {
+                        //otherwise raise error
+                        app.common.log(e);
+                        callback(new Error('Invalid JSON data.'));
+                        return;
+                    }
                 }
             }
         }
