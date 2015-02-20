@@ -396,6 +396,15 @@ HttpDataController.prototype.filter = function (callback) {
                         if (fields.length>0) {
                             q.select(fields);
                         }
+                        else {
+                            //search for data view
+                            if (arr.length==1) {
+                                var view = self.model.dataviews(arr[0]);
+                                if (view) {
+                                    q.select(view.name);
+                                }
+                            }
+                        }
                     }
                     //set $skip
                     q.skip(skip);
@@ -547,6 +556,55 @@ HttpDataController.prototype.index = function(callback)
     }
     catch (e) {
         callback(common.httpError(e));
+    }
+};
+
+HttpDataController.prototype.association = function(callback) {
+    try {
+        var self = this, parent = self.context.params.parent, model = self.context.params.model;
+        if (common.isNullOrUndefined(parent) || common.isNullOrUndefined(model)) {
+            callback(new common.HttpBadRequest());
+            return;
+        }
+        self.model.where(self.model.primaryKey).equal(parent).select([self.model.primaryKey]).first(function(err, result) {
+            if (err) {
+                common.log(err);
+                callback(new common.HttpServerError());
+                return;
+            }
+            if (common.isNullOrUndefined(result)) {
+                callback(new common.HttpNotFoundException());
+                return;
+            }
+            //get parent object (DataObject)
+            var obj = self.model.convert(result);
+            var associatedModel = self.context.model(model);
+            if (common.isNullOrUndefined(associatedModel)) {
+                callback(new common.HttpNotFoundException());
+                return;
+            }
+            var field = associatedModel.attributes.filter(function(x) { return x.type === self.model.name; })[0];
+            if (common.isNullOrUndefined(field)) {
+                callback(new common.HttpNotFoundException());
+                return;
+            }
+            //get field mapping
+            var mapping = associatedModel.inferMapping(field.name);
+            associatedModel.filter(self.context.params, function(err, q) {
+                if (err) {
+                    callback(err);
+                }
+                else {
+                    q.where(mapping.childField).equal(parent).list(function(err, result) {
+                        callback(err, self.result(result));
+                    });
+                }
+            });
+        });
+    }
+    catch(e) {
+        common.log(e);
+        callback(e, new common.HttpServerError());
     }
 };
 

@@ -20,8 +20,21 @@ var common = require('./common'),
     da = require('most-data'),
     formidable = require('formidable'),
     querystring = require('querystring'),
+    /**
+     * @constructs HttpBaseController
+     */
     HttpBaseController= require('./base-controller'),
+    /**
+     * @constructs HttpDataController
+     */
     HttpDataController= require('./data-controller'),
+    /**
+     * @constructs HttpLookupController
+     */
+    HttpLookupController= require('./lookup-controller'),
+    /**
+     * @constructs HttpContext
+     */
     HttpContext= require('./http-context').HttpContext,
     crypto = require('crypto');
 /**
@@ -1154,17 +1167,21 @@ var web = {
      */
     controllers: {
         /**
-         * @class HttpController
+         * @constructs HttpController
          */
         HttpController: mvc.HttpController,
         /**
-         * @class HttpBaseController
+         * @constructs HttpBaseController
          */
         HttpBaseController: HttpBaseController,
         /**
-         * @class HttpDataController
+         * @constructs HttpDataController
          */
-        HttpDataController: HttpDataController
+        HttpDataController: HttpDataController,
+        /**
+         * @constructs HttpDataController
+         */
+        HttpLookupController: HttpLookupController
     },
     views: {
         /**
