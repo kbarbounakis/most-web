@@ -84,7 +84,6 @@ AuthHandler.prototype.authenticateRequest = function (context, callback) {
         }
         else {
             //set anonymous identity
-
             if (model)
                 context.user = model.convert(AuthHandler.ANONYMOUS_IDENTITY);
             else
