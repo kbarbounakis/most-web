@@ -215,22 +215,24 @@ HttpDataController.prototype.schema = function (callback) {
             //prepape views and view fields
             if (m.views) {
                 m.views.forEach(function(view) {
-                   view.fields.forEach(function(field) {
-                       if (/\./.test(field.name)==false) {
-                           //extend view field
-                           var name = field.name;
-                           var mField = m.attributes.filter(function(y) {
-                               return (y.name==name);
-                           })[0];
-                           if (mField) {
-                               for (var key in mField) {
-                                   if (mField.hasOwnProperty(key) && !field.hasOwnProperty(key)) {
-                                           field[key] = mField[key];
-                                   }
-                               }
-                           }
-                       }
-                   });
+                    if (view.fields) {
+                        view.fields.forEach(function(field) {
+                            if (/\./.test(field.name)==false) {
+                                //extend view field
+                                var name = field.name;
+                                var mField = m.attributes.filter(function(y) {
+                                    return (y.name==name);
+                                })[0];
+                                if (mField) {
+                                    for (var key in mField) {
+                                        if (mField.hasOwnProperty(key) && !field.hasOwnProperty(key)) {
+                                            field[key] = mField[key];
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
                 });
             }
             callback(null, self.result(m));
