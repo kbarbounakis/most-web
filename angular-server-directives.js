@@ -126,7 +126,7 @@ var directives = {
             return {
                 restrict:'E',
                 replace: true,
-                scope: { model:'@',mask:'@' },
+                scope: { model:'@',mask:'@',state:'@' },
                 compile:function() {
                     return {
                         pre: function preLink(scope, element) {
@@ -134,7 +134,23 @@ var directives = {
                             var deferred = $qs.defer();
                             try {
                                 var targetModel = $context.model(scope.model);
-                                var p = new DataPermissionEventListener(), e = { model: targetModel, state: scope.mask, throwError:false };
+                                if (web.common.isNullOrUndefined(scope.state)) {
+                                    if (scope.mask)
+                                        if (scope.mask == 1)
+                                            scope.state = 0;
+                                        else if (scope.mask == 2)
+                                            scope.state = 1;
+                                        else if (scope.mask == 4)
+                                            scope.state = 2;
+                                        else if (scope.mask == 8)
+                                            scope.state = 4;
+                                        else
+                                            scope.state = scope.mask;
+                                }
+                                var p = new DataPermissionEventListener(), e = { model: targetModel, state: scope.state, throwError:false };
+
+
+
                                 p.validate(e, function(err) {
                                     if (e.result) {
                                         var result = $compile(element.contents())(scope);
