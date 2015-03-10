@@ -579,7 +579,11 @@ AttachmentFileSystemStorage.prototype.save = function(context, item, callback) {
             item.version = item.version || 1;
             //file status (false) not published
             item.published = item.published || false;
-
+            //set oid explicitly
+            item.oid = common.randomChars(12);
+            //set url
+            item.url = util.format(self.virtualPath, item.oid)
+            //save attachment
             attachments.save(item, function(err) {
                 callback(err);
             });
