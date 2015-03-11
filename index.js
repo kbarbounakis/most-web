@@ -347,18 +347,32 @@ function HttpApplication() {
             throw e;
         }
     });
+    /**
+     * @type {HttpCache}
+     */
     var $cache;
     self.module.service('$cache', function() {
         try {
-            if (!web.common.isNullOrUndefined($cache))
-                return $cache;
-            var NodeCache = require( "node-cache" );
-            $cache = new NodeCache();
-            return $cache;
+            return self.cache;
         }
         catch (e) {
             throw e;
         }
+    });
+
+    Object.defineProperty(self, 'cache', {
+        get: function () {
+            if (!web.common.isNullOrUndefined($cache))
+                return $cache;
+            var HttpCache = require( "./http-cache" );
+            /**
+             * @type {HttpCache|*}
+             */
+            $cache = new HttpCache();
+            return $cache;
+        },
+        configurable: false,
+        enumerable: false
     });
 
 }
@@ -1091,6 +1105,17 @@ HttpApplication.prototype.start = function (options) {
         console.log(e);
     }
 };
+/**
+ * @param {string} name
+ * @param {function=} ctor
+ * @returns {HttpApplication|function()}
+ */
+HttpApplication.prototype.service = function(name, ctor) {
+    if (typeof ctor === 'undefined')
+        return this.module.service(name);
+    this.module.service(name, ctor);
+    return this;
+};
 
 var web = {
     /**
@@ -1279,6 +1304,17 @@ var web = {
  * @type HttpApplication
  */
 var __current__ = null;
+
+if (typeof global !== 'undefined' && global!=null) {
+    //set current application as global property (globals.application)
+    Object.defineProperty(global, 'application', {
+        get: function () {
+            return web.current;
+        },
+        configurable: false,
+        enumerable: false
+    });
+}
 
 Object.defineProperty(web, 'current', {
     get: function () {
