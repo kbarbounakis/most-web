@@ -908,7 +908,36 @@ HttpApplication.prototype.executeRequest = function (options, callback) {
         this.executeExternalRequest(opts,null, callback);
     }
     else {
-        //set cookie header (for internal requests)
+        //todo::set cookie header (for internal requests)
+        /*
+        IMPORTANT: set response Content-Length to -1 in order to force the default HTTP response format.
+        if the content length is unknown (server response does not have this header)
+        in earlier version of node.js <0.11.9 the response contains by default a hexademical number that
+        represents the content length. This number appears exactly after response headers and before response body.
+        If the content length is defined the operation omits this hexademical value
+        e.g. the wrong or custom formatted response
+        HTTP 1.1 Status OK
+        Content-Type: text/html
+        ...
+        Connection: keep-alive
+
+        6b8
+
+        <html><body>
+        ...
+        </body></html>
+        e.g. the standard format
+         HTTP 1.1 Status OK
+         Content-Type: text/html
+         ...
+         Connection: keep-alive
+
+
+         <html><body>
+         ...
+         </body></html>
+        */
+        response.setHeader('Content-Length',-1);
         this.__handleRequest(request, response, function(err) {
             if (err) {
                 callback(err);
@@ -936,8 +965,7 @@ HttpApplication.prototype.executeRequest = function (options, callback) {
                     var encoding = null;
                     if (util.isArray(response.output)) {
                         if (response.output.length>0) {
-                            var start = response.output[0].indexOf('\r\n', response._header.length) + 2;
-                            body = response.output[0].substr(start);
+                            body = response.output[0].substr(response._header.length);
                             encoding = response.outputEncodings[0];
                         }
                     }
