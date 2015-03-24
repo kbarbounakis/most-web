@@ -529,6 +529,9 @@ var common = {
         if (virtualPath.indexOf('/')!=0)
             return !(virtualPath[0]=='\\');
         return true;
+    },
+    getBasicAuthHeader: function(username, password) {
+        return "Basic " + (new Buffer(username +':'+password)).toString('base64');
     }
 };
 
