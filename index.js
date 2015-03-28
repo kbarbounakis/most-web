@@ -1095,10 +1095,13 @@ HttpApplication.prototype.onError = function (response, err, callback) {
         }
     }
     callback.call(this);
-}
+};
+var HTTP_SERVER_DEFAULT_BIND = '127.0.0.1';
+var HTTP_SERVER_DEFAULT_PORT = 3000;
 
 /**
- * Starts an HTTP Application instance.
+ *
+ * @param {*=} options
  */
 HttpApplication.prototype.start = function (options) {
     try {
@@ -1106,6 +1109,18 @@ HttpApplication.prototype.start = function (options) {
 
         if (this.config == null)
             this.init();
+        /**
+         * @memberof process.env
+         * @property {number} PORT
+         * @property {string} IP
+         * @property {string} NODE_ENV
+         */
+        var opts = {
+            bind:(process.env.IP || HTTP_SERVER_DEFAULT_BIND),
+            port:(process.env.PORT ? process.env.PORT: HTTP_SERVER_DEFAULT_PORT)
+        };
+        //extend options
+        util._extend(opts, options);
 
         http.createServer(function (request, response) {
             var app = web, context = app.current.createContext(request, response);
@@ -1127,7 +1142,8 @@ HttpApplication.prototype.start = function (options) {
                 else
                     response.end();
             });
-        }).listen(options.port ? options.port : 80, options.bind ? options.bind : '127.0.0.1');
+        }).listen(opts.port, opts.bind);
+        web.common.log(util.format('Web application is running at http://%s:%s/', opts.bind, opts.port));
 
     } catch (e) {
         console.log(e);

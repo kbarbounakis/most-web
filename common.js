@@ -186,7 +186,7 @@ UnknownValue.convert = function(value) {
         result = value;
     }
     return result;
-}
+};
 
 /**
  *
@@ -275,8 +275,11 @@ UnknownValue.extend = function(origin, expr, value, options) {
         throw new Error('Invalid object property notation. Expected property[name] or [name]');
     }
     return origin;
-}
-
+};
+/**
+ *
+ * @type {{AbstractMethodException: AbstractMethodException, FileNotFoundException: FileNotFoundException, HttpException: HttpException, httpError: Function, HttpNotFoundException: HttpNotFoundException, HttpMethodNotAllowed: HttpMethodNotAllowed, HttpBadRequest: HttpBadRequest, HttpUnauthorizedException: HttpUnauthorizedException, HttpForbiddenException: HttpForbiddenException, HttpServerError: HttpServerError, getFunctionParams: getFunctionParams, isFunction: Function, isEmptyString: Function, isNullOrUndefined: Function, isHttpException: Function, isObject: Function, isNumber: Function, randomInt: Function, randomChars: Function, convertFromBase26: Function, convertToBase26: Function, randomHex: Function, parseCookies: Function, parseForm: Function, parseValue: Function, parseInt: Function, parseFloat: Function, log: Function, isRelativeUrl: Function, getBasicAuthHeader: Function}}
+ */
 var common = {
     /**
      * @class AbstractMethodException
@@ -353,6 +356,16 @@ var common = {
      */
     isNullOrUndefined: function(obj) {
         if (typeof obj === 'undefined' || obj===null)
+            return true;
+        return false;
+    },
+    /**
+     * Checks if the specified object is an HttpException instance or inherits HttpException class.
+     * @param {*} obj
+     * @returns {boolean}
+     */
+    isHttpException: function(obj) {
+        if (obj instanceof HttpException)
             return true;
         return false;
     },
@@ -536,6 +549,9 @@ var common = {
 };
 
 if (typeof exports !== 'undefined') {
+    /**
+     * @see common
+     */
     module.exports = common;
 }
 
