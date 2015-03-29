@@ -20159,7 +20159,7 @@ var ngNonBindableDirective = ngDirective({ terminal: true, priority: 1000 });
     </example>
  */
 var ngPluralizeDirective = ['$locale', '$interpolate', function($locale, $interpolate) {
-  var BRACE = /{}/g;
+  var BRACE = /\{}/g;
   return {
     restrict: 'EA',
     link: function(scope, element, attr) {
@@ -20571,15 +20571,16 @@ var ngRepeatDirective = ['$parse', '$animate', '$document', function($parse, $an
 
             if (!block.scope) {
               $transclude(childScope, function(clone) {
-                clone[clone.length++] = $document.get(0).createComment('');
-                $animate.enter(clone, null, jqLite(previousNode));
-                previousNode = clone;
-                block.scope = childScope;
-                // Note: We only need the first/last node of the cloned nodes.
-                // However, we need to keep the reference to the jqlite wrapper as it might be changed later
-                // by a directive with templateUrl when its template arrives.
-                block.clone = clone;
-                nextBlockMap[block.id] = block;
+                  clone[clone.length] = $document.get(0).createComment('');
+                  clone.length++;
+                  $animate.enter(clone, null, jqLite(previousNode));
+                  previousNode = clone;
+                  block.scope = childScope;
+                  // Note: We only need the first/last node of the cloned nodes.
+                  // However, we need to keep the reference to the jqlite wrapper as it might be changed later
+                  // by a directive with templateUrl when its template arrives.
+                  block.clone = clone;
+                  nextBlockMap[block.id] = block;
               });
             }
           }

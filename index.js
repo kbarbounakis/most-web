@@ -374,8 +374,13 @@ function HttpApplication() {
         configurable: false,
         enumerable: false
     });
-
+    /**
+     * Gets or sets a boolean that indicates whether the application is in development mode
+     * @type {string}
+     */
+    this.development = (process.env.NODE_ENV === 'development');
 }
+
 util.inherits(HttpApplication, da.types.EventEmitter2);
 
 /**
@@ -1104,11 +1109,12 @@ var HTTP_SERVER_DEFAULT_PORT = 3000;
  * @param {*=} options
  */
 HttpApplication.prototype.start = function (options) {
+    var self = this;
     try {
         //validate options
 
-        if (this.config == null)
-            this.init();
+        if (self.config == null)
+            self.init();
         /**
          * @memberof process.env
          * @property {number} PORT
@@ -1123,19 +1129,19 @@ HttpApplication.prototype.start = function (options) {
         util._extend(opts, options);
 
         http.createServer(function (request, response) {
-            var app = web, context = app.current.createContext(request, response);
+            var context = self.createContext(request, response);
             //begin request processing
-            app.current.processRequest(context, function (err) {
+            self.processRequest(context, function (err) {
                 if (err) {
-                    if (app.current.listeners('error').length == 0) {
-                        app.current.onError(response, err, function () {
+                    if (self.listeners('error').length == 0) {
+                        self.onError(response, err, function () {
                             response.end();
                         });
                     }
                     else {
                         //raise application error event
-                        app.current.emit('error', function (err) {
-                            response.end();
+                        self.emit('error', { error:err, request:request, response:response }, function() {
+                            if (response) { response.end(); }
                         });
                     }
                 }
@@ -1160,7 +1166,9 @@ HttpApplication.prototype.service = function(name, ctor) {
     this.module.service(name, ctor);
     return this;
 };
-
+/**
+ * @module most-web
+ */
 var web = {
     /**
      * @class HttpApplication
@@ -1379,5 +1387,8 @@ Object.defineProperty(web, 'current', {
 });
 
 if (typeof exports !== 'undefined') {
+    /**
+     * @see web
+     */
     module.exports = web;
 }

@@ -276,10 +276,6 @@ UnknownValue.extend = function(origin, expr, value, options) {
     }
     return origin;
 };
-/**
- *
- * @type {{AbstractMethodException: AbstractMethodException, FileNotFoundException: FileNotFoundException, HttpException: HttpException, httpError: Function, HttpNotFoundException: HttpNotFoundException, HttpMethodNotAllowed: HttpMethodNotAllowed, HttpBadRequest: HttpBadRequest, HttpUnauthorizedException: HttpUnauthorizedException, HttpForbiddenException: HttpForbiddenException, HttpServerError: HttpServerError, getFunctionParams: getFunctionParams, isFunction: Function, isEmptyString: Function, isNullOrUndefined: Function, isHttpException: Function, isObject: Function, isNumber: Function, randomInt: Function, randomChars: Function, convertFromBase26: Function, convertToBase26: Function, randomHex: Function, parseCookies: Function, parseForm: Function, parseValue: Function, parseInt: Function, parseFloat: Function, log: Function, isRelativeUrl: Function, getBasicAuthHeader: Function}}
- */
 var common = {
     /**
      * @class AbstractMethodException
