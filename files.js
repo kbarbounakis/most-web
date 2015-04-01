@@ -882,14 +882,16 @@ function copyFile(src, dest, callback) {
         callback(err);
     });
 }
-
+/**
+ * @namespace files
+ */
 var files = {
     /**
-     * @class FileSystemStorage
+     * @constructs FileSystemStorage
      */
     FileSystemStorage:FileSystemStorage,
     /**
-     * @class AttachmentFileSystemStorage
+     * @constructs AttachmentFileSystemStorage
      */
     AttachmentFileSystemStorage:AttachmentFileSystemStorage,
     /**
@@ -900,11 +902,14 @@ var files = {
         return new FileSystemStorage(physicalPath);
     },
     /**
-     * @class FileStorage
+     * @constructs FileStorage
      */
     FileStorage:FileStorage
 };
-
 if (typeof exports !== 'undefined') {
+    /**
+     * @module most-web/files
+     * @see common
+     */
     module.exports = files;
 }

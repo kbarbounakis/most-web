@@ -9,8 +9,11 @@
  * Date: 2014-06-09
  */
 var util = require('util');
+
 /**
  * Abstract Method Exception class
+ * @class AbstractMethodException
+ * @augments Error
  * */
 function AbstractMethodException(message) {
     AbstractMethodException.super_.call(this, message || 'Cannot call an abstract method.', this.constructor);
@@ -30,7 +33,7 @@ function FileNotFoundException(message) {
 }
 util.inherits(FileNotFoundException, Error);
 /**
- *
+ * @class HttpException
  * @param {number=} status
  * @param {string=} message
  * @param {string=} internalMessage
@@ -59,6 +62,9 @@ util.inherits(HttpException, Error);
 
 /**
  * HTTP 400 Bad Request exception class
+ * @class HttpBadRequest
+ * @param {string=} message
+ * @augments HttpException
  * */
 function HttpBadRequest(message) {
     HttpNotFoundException.super_.call(this, 400, message || 'Bad Request', this.constructor);
@@ -67,6 +73,9 @@ function HttpBadRequest(message) {
 util.inherits(HttpBadRequest, HttpException);
 /**
  * HTTP 404 Not Found Exception class
+ * @class HttpNotFoundException
+ * @param {string=} message
+ * @augments HttpException
  * */
  function HttpNotFoundException(message) {
     HttpNotFoundException.super_.call(this, 404, message || 'Not Found', this.constructor);
@@ -75,6 +84,9 @@ util.inherits(HttpBadRequest, HttpException);
 util.inherits(HttpNotFoundException, HttpException);
 /**
  * HTTP 405 Method Not Allowed exception class
+ * @class HttpMethodNotAllowed
+ * @param {string=} message
+ * @augments HttpException
  * */
 function HttpMethodNotAllowed(message) {
     HttpNotFoundException.super_.call(this, 405, message || 'Method Not Allowed', this.constructor);
@@ -83,6 +95,9 @@ function HttpMethodNotAllowed(message) {
 util.inherits(HttpMethodNotAllowed, HttpException);
 /**
  * HTTP 401 Unauthorized Exception class
+ * @class HttpUnauthorizedException
+ * @param {string=} message
+ * @augments HttpException
  * */
 function HttpUnauthorizedException(message) {
     HttpUnauthorizedException.super_.call(this, 401, message || 'Unauthorized', this.constructor);
@@ -90,6 +105,9 @@ function HttpUnauthorizedException(message) {
 util.inherits(HttpUnauthorizedException, HttpException);
 /**
  * HTTP 403 Forbidden Exception class
+ * @class HttpForbiddenException
+ * @param {string=} message
+ * @augments HttpException
  * */
 function HttpForbiddenException(message) {
     HttpForbiddenException.super_.call(this, 403, message || 'Forbidden', this.constructor);
@@ -98,6 +116,9 @@ util.inherits(HttpForbiddenException, HttpException);
 
 /**
  * HTTP 500 Internal Server Error Exception class
+ * @class HttpServerError
+ * @param {string=} message
+ * @augments HttpException
  * */
 function HttpServerError(message) {
     HttpServerError.super_.call(this, 500, message || 'Internal Server Error', this.constructor);
@@ -255,7 +276,7 @@ UnknownValue.extend = function(origin, expr, value, options) {
             else {
                 if (origin.value instanceof UnknownValue) {
                     origin.value = { };
-                };
+                }
                 origin.value[name] = origin.value[name] || new UnknownValue();
                 descriptor = new UnknownPropertyDescriptor(origin.value, name);
                 UnknownValue.extend(descriptor, expr1, value);
@@ -276,18 +297,21 @@ UnknownValue.extend = function(origin, expr, value, options) {
     }
     return origin;
 };
+
+/**
+ * @namespace common
+ */
 var common = {
     /**
-     * @class AbstractMethodException
+     * @constructs AbstractMethodException
      * */
     AbstractMethodException : AbstractMethodException,
     /**
-     * @class FileNotFoundException
-     * @augments Error
+     * @constructs FileNotFoundException
      * */
     FileNotFoundException : FileNotFoundException,
     /**
-     * @class HttpException
+     * @constructs HttpException
      * */
     HttpException : HttpException,
     /**
@@ -298,27 +322,27 @@ var common = {
         return HttpException.create(err);
     },
     /**
-     * @class HttpNotFoundException
+     * @constructs HttpNotFoundException
      * */
     HttpNotFoundException : HttpNotFoundException,
     /**
-     * @class HttpMethodNotAllowed
+     * @constructs HttpMethodNotAllowed
      * */
     HttpMethodNotAllowed : HttpMethodNotAllowed,
     /**
-     * @class HttpBadRequest
+     * @constructs HttpBadRequest
      * */
     HttpBadRequest: HttpBadRequest,
     /**
-     * @class HttpUnauthorizedException
+     * @constructs HttpUnauthorizedException
      * */
     HttpUnauthorizedException: HttpUnauthorizedException,
     /**
-     * @class HttpForbiddenException
+     * @constructs HttpForbiddenException
      * */
     HttpForbiddenException: HttpForbiddenException,
     /**
-     * @class HttpServerError
+     * @constructs HttpServerError
      * */
     HttpServerError:HttpServerError,
     /**
@@ -351,9 +375,7 @@ var common = {
      * @returns {boolean}
      */
     isNullOrUndefined: function(obj) {
-        if (typeof obj === 'undefined' || obj===null)
-            return true;
-        return false;
+        return (typeof obj === 'undefined' || obj === null);
     },
     /**
      * Checks if the specified object is an HttpException instance or inherits HttpException class.
@@ -361,9 +383,7 @@ var common = {
      * @returns {boolean}
      */
     isHttpException: function(obj) {
-        if (obj instanceof HttpException)
-            return true;
-        return false;
+        return (obj instanceof HttpException);
     },
     /**
      * Checks if the specified object argument is object.
@@ -371,13 +391,11 @@ var common = {
      * @returns {boolean}
      */
     isObject: function(obj) {
-    if (typeof obj === 'object' && obj!==null)
-        return true;
-    return false;
-},
+        return !!(typeof obj === 'object' && obj !== null);
+    },
     /**
      * Checks if the specified object argument is numeric or not.
-     * @param {*} obj
+     * @param {*} n
      * @returns {boolean}
      */
     isNumber: function(n) {
@@ -385,8 +403,8 @@ var common = {
     },
     /**
      * Returns a random integer between a minimum and a maximum value
-     * @param {Number} length
-     * @param {} callback
+     * @param {number} min
+     * @param {number} max
      */
     randomInt: function(min, max) {
         return Math.floor(Math.random()*max) + min;
@@ -394,7 +412,6 @@ var common = {
     /**
      * Returns a random string based on the length specified
      * @param {Number} length
-     * @param {} callback
      */
     randomChars: function(length) {
         length = length || 8;
@@ -415,7 +432,7 @@ var common = {
         if (!/[a-z]{8}/.test(s)) {
             throw new Error('Invalid base-26 format.');
         }
-        var a = 'a'.charCodeAt(0)
+        var a = 'a'.charCodeAt(0);
         for (var i = 7; i >=0; i--) {
             num = (num * 26) + (s[i].charCodeAt(0) - a);
         }
@@ -445,8 +462,7 @@ var common = {
     },
     /**
      * Returns a random string based on the length specified
-     * @param {Number} length
-     * @param {} callback
+     * @param {number} length
      */
     randomHex: function(length) {
         length = (length || 8)*2;
@@ -546,6 +562,7 @@ var common = {
 
 if (typeof exports !== 'undefined') {
     /**
+     * @module most-web/common
      * @see common
      */
     module.exports = common;

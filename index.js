@@ -1171,11 +1171,11 @@ HttpApplication.prototype.service = function(name, ctor) {
  */
 var web = {
     /**
-     * @class HttpApplication
+     * @contructs HttpApplication
      * */
     HttpApplication: HttpApplication,
     /**
-     * @class HttpContext
+     * @contructs HttpContext
      * */
     HttpContext: HttpContext,
     /**
@@ -1263,7 +1263,7 @@ var web = {
     views: {
         /**
          * Creates an empty HTTP response.
-         * @returns {mvc.HttpEmptyResult}
+         * @returns {HttpEmptyResult}
          */
         createEmptyResult: function () {
             return new mvc.HttpEmptyResult();
@@ -1271,7 +1271,7 @@ var web = {
         /**
          * Creates a basic HTTP response with the data provided
          * @param s {string}
-         * @returns {mvc.HttpContentResult}
+         * @returns {HttpContentResult}
          */
         createContentResult: function (s) {
             return new mvc.HttpContentResult(s);
@@ -1279,7 +1279,7 @@ var web = {
         /**
          * Creates a new HTTP view context that is going to be used in view controllers
          * @param context {HttpContext=} - The current HTTP context
-         * @returns {mvc.HttpViewContext} - The newly create HTTP view context
+         * @returns {HttpViewContext} - The newly create HTTP view context
          */
         createViewContext: function (context) {
             return new mvc.HttpViewContext(context);
@@ -1287,7 +1287,7 @@ var web = {
         /**
          * Creates a JSON response with the given data
          * @param data
-         * @returns {mvc.HttpJsonResult}
+         * @returns {HttpJsonResult}
          */
         createJsonResult: function (data) {
             return new mvc.HttpJsonResult(data);
@@ -1295,7 +1295,7 @@ var web = {
         /**
          * Creates a HTTP redirect to given url.
          * @param url
-         * @returns {mvc.HttpRedirectResult}
+         * @returns {HttpRedirectResult}
          */
         createRedirectResult: function (url) {
             return new mvc.HttpRedirectResult(url);
@@ -1303,7 +1303,7 @@ var web = {
         /**
          * Creates an XML response with the data provided.
          * @param data
-         * @returns {mvc.HttpXmlResult}
+         * @returns {HttpXmlResult}
          */
         createXmlResult: function (data) {
             return new mvc.HttpXmlResult(data);
@@ -1311,7 +1311,7 @@ var web = {
         /**
          * Creates an HTML response with the data provided.
          * @param data
-         * @returns {mvc.HttpViewResult}
+         * @returns {HttpViewResult}
          */
         createViewResult: function (name, data) {
             return new mvc.HttpViewResult(name, data);
@@ -1335,11 +1335,15 @@ var web = {
     },
     html: {
         /**
+         * @constructs html.HtmlWriter
+         */
+        HtmlWriter:html.HtmlWriter,
+        /**
          * Creates an HTML writer object.
-         * @returns {HtmlWriter}
+         * @returns {HtmlWriter|*}
          */
         createHtmlWriter: function () {
-            return new HtmlWriter();
+            return new html.HtmlWriter();
         }
     },
     /**
@@ -1351,7 +1355,6 @@ var web = {
      */
     files: files
 };
-
 /**
  * @type HttpApplication
  */
@@ -1388,6 +1391,7 @@ Object.defineProperty(web, 'current', {
 
 if (typeof exports !== 'undefined') {
     /**
+     * @module most-web
      * @see web
      */
     module.exports = web;

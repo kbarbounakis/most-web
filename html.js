@@ -209,7 +209,7 @@ if (typeof exports !== 'undefined')
 {
     module.exports = {
         /**
-         * @constructor HtmlWriter
+         * @constructs HtmlWriter
          */
         HtmlWriter:HtmlWriter,
         /**

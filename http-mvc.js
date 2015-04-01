@@ -54,10 +54,9 @@ HttpResult.prototype.execute = function(context, callback) {
 };
 /**
  * Represents a user-defined content type that is a result of an action.
- * @param content {String}
- * @param contentType {String}
- * @param contentEncoding {String}
  * @class HttpContentResult
+ * @param {string} content
+ * @augments HttpResult
  * */
 function HttpContentResult(content) {
 
@@ -78,6 +77,7 @@ util.inherits(HttpContentResult,HttpResult);
  * Represents a content that does nothing.
  * @class HttpEmptyResult
  * @constructor
+ * @augments HttpResult
  */
 function HttpEmptyResult() {
     //
@@ -103,6 +103,10 @@ function _json_ignore_null_replacer(key, value) {
 
 /**
  * Represents an action that is used to send JSON-formatted content.
+ * @class HttpJsonResult
+ * @param {*} data
+ * @constructor
+ * @augments HttpResult
  */
 function HttpJsonResult(data)
 {
@@ -123,6 +127,7 @@ util.inherits(HttpJsonResult,HttpResult);
 /**
  * Represents an action that is used to send Javascript-formatted content.
  * @class HttpJavascriptResult
+ * @param {*} data
  * @constructor
  * @augments HttpResult
  */
@@ -141,6 +146,10 @@ util.inherits(HttpJavascriptResult,HttpResult);
 
 /**
  * Represents an action that is used to send XML-formatted content.
+ * @class HttpXmlResult
+ * @param data
+ * @constructor
+ * @augments HttpResult
  */
 function HttpXmlResult(data)
 {
@@ -162,6 +171,10 @@ util.inherits(HttpXmlResult,HttpResult);
 
 /**
  * Represents a redirect action to a specified URI.
+ * @class HttpRedirectResult
+ * @param {string|*} url
+ * @constructor
+ * @augments HttpResult
  */
 function HttpRedirectResult(url) {
     this.url = url;
@@ -189,9 +202,11 @@ HttpRedirectResult.prototype.execute = function(context, callback)
 
 /**
  * Represents a static file result
+ * @class HttpFileResult
  * @param {string} physicalPath
  * @param {string=} fileName
  * @constructor
+ * @augments HttpResult
  */
 function HttpFileResult(physicalPath, fileName) {
     //
@@ -308,8 +323,10 @@ HttpFileResult.prototype.execute = function(context, callback)
 
 /**
  * Represents a class that is used to render a view.
- * @param {String=} name - The name of the view.
+ * @class HttpViewResult
+ * @param {string=} name - The name of the view.
  * @param {Array=} data - The data that are going to be used to render the view.
+ * @augments HttpResult
  */
 function HttpViewResult(name, data)
 {
@@ -422,8 +439,8 @@ HttpViewResult.prototype.execute = function(context, callback)
 
 /**
  * Provides methods that respond to HTTP requests that are made to a web application
+ * @class HttpController
  * @param {HttpContext} context - The executing HTTP context.
- * @returns {HttpController}
  * */
 function HttpController(context) {
     /**
@@ -580,6 +597,7 @@ HttpController.prototype.empty = function()
 }
 /**
  * Abstract view engine class
+ * @class HttpViewEngine
  * @param {HttpContext} context
  * @constructor
  * @augments {EventEmitter}
@@ -601,6 +619,7 @@ HttpViewEngine.prototype.render = function(url, options, callback) {
 
 /**
  * Defines an HTTP view engine in application configuration
+ * @class HttpViewEngineReference
  * @constructor
  */
 function HttpViewEngineReference()
@@ -624,6 +643,7 @@ function HttpViewEngineReference()
 
 /**
  * Encapsulates information that is related to rendering a view.
+ * @class HttpViewContext
  * @param {HttpContext} context
  * @property {DataModel} model
  * @constructor
@@ -782,51 +802,51 @@ HttpViewContext.HtmlViewHelper = function($view)
 
 var mvc = {
     /**
-     * @class HttpResult
+     * @constructs HttpResult
      * */
     HttpResult : HttpResult,
     /**
-     * @class HttpContentResult
+     * @constructs HttpContentResult
      * */
     HttpContentResult : HttpContentResult,
     /**
-     * @class HttpJsonResult
+     * @constructs HttpJsonResult
      * */
     HttpJsonResult:HttpJsonResult,
     /**
-     * @class HttpEmptyResult
+     * @constructs HttpEmptyResult
      * */
     HttpEmptyResult:HttpEmptyResult,
     /**
-     * @class HttpXmlResult
+     * @constructs HttpXmlResult
      * */
     HttpXmlResult:HttpXmlResult,
     /**
-     * @class HttpRedirectResult
+     * @constructs HttpRedirectResult
      * */
     HttpRedirectResult:HttpRedirectResult,
     /**
-     * @class HttpFileResult
+     * @constructs HttpFileResult
      * */
     HttpFileResult:HttpFileResult,
     /**
-     * @class HttpViewResult
+     * @constructs HttpViewResult
      * */
     HttpViewResult:HttpViewResult,
     /**
-     * @class HttpViewContext
+     * @constructs HttpViewContext
      * */
     HttpViewContext:HttpViewContext,
     /**
-     * @class HttpController
+     * @constructs HttpController
      * */
     HttpController:HttpController,
     /**
-     * @class HttpViewEngine
+     * @constructs HttpViewEngine
      * */
     HttpViewEngine: HttpViewEngine,
     /**
-     * @class HttpViewEngineReference
+     * @constructs HttpViewEngineReference
      * */
     HttpViewEngineReference: HttpViewEngineReference
 }
