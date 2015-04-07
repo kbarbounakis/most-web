@@ -16,7 +16,8 @@ var common = require('./common'),
     path = require('path'),
     da = require("most-data"),
     fs = require('fs'),
-    crypto = require('crypto');
+    crypto = require('crypto'),
+    async = require('async');
 /**
  * @class HttpResult
  * @constructor
@@ -341,6 +342,7 @@ function HttpViewResult(name, data)
  * */
 util.inherits(HttpViewResult,HttpResult);
 /**
+ * @param {function(Error=,*=)} callback
  * @param {HttpContext} context - The HTTP context
  * */
 HttpViewResult.prototype.execute = function(context, callback)
@@ -374,66 +376,84 @@ HttpViewResult.prototype.execute = function(context, callback)
     /**
      * {HttpViewEngineReference|*}
      */
-    var viewPath = null;
-    var viewEngine = array(app.current.config.engines).firstOrDefault(function(x) {
-        //resolve view path
-        var p = app.current.mapPath(util.format('/views/%s/%s.html.%s',controllerName,viewName, x.extension));
-        if (!fs.existsSync(p)) {
-            p = app.current.mapPath(util.format('/views/shared/%s.html.%s',viewName, x.extension));
-            var res = fs.existsSync(p);
-            if (res==true) {
+    var viewPath, viewEngine;
+    async.eachSeries(app.current.config.engines, function(engine, cb) {
+        if (viewPath) { cb(); return; }
+        //resolve controller view path
+        var p = app.current.mapPath(util.format('/views/%s/%s.html.%s',controllerName,viewName, engine.extension));
+        fs.exists(p, function(exists) {
+            if (exists) {
                 viewPath = p;
-                return true;
+                viewEngine = engine;
+                cb();
             }
+            else {
+                //capitalize first letter of controller
+                var capitalizedControllerName = controllerName.charAt(0).toUpperCase() + controllerName.substring(1);
+                p = app.current.mapPath(util.format('/views/%s/%s.html.%s',capitalizedControllerName,viewName, engine.extension));
+                fs.exists(p, function(exists) {
+                    if (exists) {
+                        viewPath = p;
+                        viewEngine = engine;
+                        cb();
+                    }
+                    else {
+                        //resolve shared view path
+                        p = app.current.mapPath(util.format('/views/shared/%s.html.%s',viewName, engine.extension));
+                        fs.exists(p, function(exists) {
+                            if (exists) { viewPath = p; viewEngine = engine; }
+                            cb();
+                        });
+                    }
+                });
+            }
+        });
+    }, function(err) {
+        if (err) { callback(err); return; }
+        if (viewEngine) {
+            var engine = require(viewEngine.type);
+            /**
+             * @type {HttpViewEngine|*}
+             */
+            var engineInstance = engine.createInstance(context);
+            //render
+            var e = { context:context, target:self };
+            context.emit('preExecuteResult', e, function(err) {
+                if (err) {
+                    callback(err);
+                }
+                else {
+                    engineInstance.render(viewPath, self.data, function(err, result) {
+                        if (err) {
+                            callback.call(context, err);
+                        }
+                        else {
+                            //HttpViewResult.result or data (?)
+                            self.result = result;
+                            context.emit('postExecuteResult', e, function(err) {
+                                if (err) {
+                                    callback.call(context, err);
+                                }
+                                else {
+                                    response.writeHead(200, {"Content-Type": self.contentType});
+                                    response.write(self.result, self.contentEncoding);
+                                    callback.call(context);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
         }
         else {
-            viewPath = p;
-            return true;
+            callback.call(context, new common.HttpNotFoundException('View Not Found'));
         }
-        return false;
-
     });
-    if (viewEngine) {
-        //get path again
-        //var path = app.current.mapPath(util.format('/views/%s/%s.html.%s',controllerName, viewName, viewEngine.extension));
-         var engine = require(viewEngine.type);
-        /**
-         * @type {HttpViewEngine|*}
-         */
-        var engineInstance = engine.createInstance(context);
-        //render
-        var e = { context:context, target:self };
-        context.emit('preExecuteResult', e, function(err) {
-           if (err) {
-               callback(err);
-           }
-            else {
-               engineInstance.render(viewPath, self.data, function(err, result) {
-                   if (err) {
-                       callback.call(context, err);
-                   }
-                   else {
-                       //HttpViewResult.result or data (?)
-                       self.result = result;
-                       context.emit('postExecuteResult', e, function(err) {
-                           if (err) {
-                               callback.call(context, err);
-                           }
-                           else {
-                               response.writeHead(200, {"Content-Type": self.contentType});
-                               response.write(self.result, self.contentEncoding);
-                               callback.call(context);
-                           }
-                       });
-                   }
-               });
-           }
-        });
 
-    }
-    else {
-        callback.call(context, new common.HttpNotFoundException('View Not Found'));
-    }
+
+
+
 };
 
 
