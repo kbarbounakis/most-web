@@ -585,7 +585,44 @@ HttpDataController.prototype.association = function(callback) {
                 callback(new common.HttpNotFoundException());
                 return;
             }
-            var field = associatedModel.attributes.filter(function(x) { return x.type === self.model.name; })[0];
+            /**
+             * Search for object junction
+             */
+            var field = self.model.attributes.filter(function(x) { return x.type === associatedModel.name; })[0], mapping;
+            if (field) {
+                /**
+                 * Get association mapping fo this field
+                 * @type {DataAssociationMapping}
+                 */
+                mapping = self.model.inferMapping(field.name);
+                if (mapping) {
+                    if ((mapping.parentModel===self.model.name) && (mapping.associationType==='junction')) {
+                        /**
+                         * @type {DataQueryable}
+                         */
+                        var junction = obj.property(field.name);
+                        junction.model.filter(self.context.params, function(err, q) {
+                            if (err) {
+                                callback(err);
+                            }
+                            else {
+                                //merge properties
+                                if (q.query.$select) { junction.query.$select = q.query.$select; }
+                                if (q.query.$group) { junction.query.$group = q.query.$group; }
+                                if (q.query.$order) { junction.query.$order = q.query.$order; }
+                                if (q.query.$prepared) { junction.query.$where = q.query.$prepared; }
+                                if (q.query.$skip) { junction.query.$skip = q.query.$skip; }
+                                if (q.query.$take) { junction.query.$take = q.query.$take; }
+                                junction.list(function(err, result) {
+                                    callback(err, self.result(result));
+                                });
+                            }
+                        });
+                        return;
+                    }
+                }
+            }
+            field = associatedModel.attributes.filter(function(x) { return x.type === self.model.name; })[0];
             if (common.isNullOrUndefined(field)) {
                 callback(new common.HttpNotFoundException());
                 return;
