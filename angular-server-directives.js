@@ -95,7 +95,8 @@ var directives = {
                             if (!childScope) {
                                 childScope = $scope.$new();
                                 $transclude(childScope, function (clone) {
-                                    clone[clone.length++] = parentDocument.createComment('');
+                                    clone.push(parentDocument.createComment(''));
+                                    //clone[clone.length++] = parentDocument.createComment('');
                                     block = {
                                         clone: clone
                                     };
