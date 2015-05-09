@@ -427,20 +427,19 @@ HttpDataController.prototype.filter = function (callback) {
                             }
                             if (name) {
                                 var field = self.model.field(name);
+                                //validate model field
                                 if (field) {
                                     if (direction=='desc')
                                         q.orderByDescending(name);
                                     else
                                         q.orderBy(name);
                                 }
-                                else {
-                                    //validate aggregate functions
-                                    if (/(count|avg|sum|min|max)\((.*?)\)/i.test(name)) {
-                                        if (direction=='desc')
-                                            q.orderByDescending(name);
-                                        else
-                                            q.orderBy(name);
-                                    }
+                                //validate aggregate functions or associated field expression e.g. user/username
+                                else if (/(count|avg|sum|min|max)\((.*?)\)/i.test(name) || /\//.test(name)) {
+                                    if (direction=='desc')
+                                        q.orderByDescending(name);
+                                    else
+                                        q.orderBy(name);
                                 }
 
                             }
