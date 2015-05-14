@@ -298,6 +298,8 @@ UnknownValue.extend = function(origin, expr, value, options) {
     return origin;
 };
 
+var UUID_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
+
 /**
  * @namespace common
  */
@@ -474,6 +476,27 @@ var common = {
         return str;
     },
     /**
+     * Returns a random GUID/UUID string
+     */
+    newGuid: function() {
+        var chars = UUID_CHARS, uuid = [], i;
+        // rfc4122, version 4 form
+        var r;
+        // rfc4122 requires these characters
+        uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
+        uuid[14] = '4';
+
+        // Fill in random data.  At i==19 set the high bits of clock sequence as
+        // per rfc4122, sec. 4.1.5
+        for (i = 0; i < 36; i++) {
+            if (!uuid[i]) {
+                r = 0 | Math.random()*16;
+                uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
+            }
+        }
+        return uuid.join('');
+    },
+    /**
      * @param {IncomingMessage|ClientRequest} request
      * @returns {*}
      */
@@ -534,10 +557,20 @@ var common = {
      * @param {Error|string|{message:string,stack:string}|*} data
      */
     log:function(data) {
-        util.log(data);
-        if (data.stack) {
-            util.log(data.stack);
+        if (data) {
+            util.log(data);
+            if (data.stack) {
+                util.log(data.stack);
+            }
         }
+    },
+    /**
+     *
+     * @param {Error|string|{message:string,stack:string}|*} data
+     */
+    debug:function(data) {
+        if (process.env.NODE_ENV==='development')
+            util.log(data);
     },
     /**
      * Validates the given parameter and returns true if this represents a relative url. Otherwise returns false.
