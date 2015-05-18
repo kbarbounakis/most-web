@@ -19594,7 +19594,8 @@ var ngIfDirective = ['$animate', '$document', function($animate, $document) {
             if (!childScope) {
               childScope = $scope.$new();
               $transclude(childScope, function (clone) {
-                clone[clone.length++] = $document.get(0).createComment(''); //$document.get(0).createComment(' end ejsIf: ' + ngIf + ' ');
+                //clone[clone.length++] = $document.get(0).createComment(''); //$document.get(0).createComment(' end ejsIf: ' + ngIf + ' ');
+                clone.push($document.get(0).createComment(''));
                 // Note: We only need the first/last node of the cloned nodes.
                 // However, we need to keep the reference to the jqlite wrapper as it might be changed later
                 // by a directive with templateUrl when its template arrives.
@@ -20571,8 +20572,9 @@ var ngRepeatDirective = ['$parse', '$animate', '$document', function($parse, $an
 
             if (!block.scope) {
               $transclude(childScope, function(clone) {
-                  clone[clone.length] = $document.get(0).createComment('');
-                  clone.length++;
+                  clone.push($document.get(0).createComment(''));
+                  //clone[clone.length] = $document.get(0).createComment('');
+                  //clone.length++;
                   $animate.enter(clone, null, jqLite(previousNode));
                   previousNode = clone;
                   block.scope = childScope;
