@@ -553,6 +553,37 @@ var common = {
         return parseFloat(any) || 0;
     },
     /**
+     * Parses any value and returns the equivalent boolean.
+     * @param {*} any
+     * @returns {*}
+     */
+    parseBoolean: function(any) {
+        if (typeof any === 'undefined' || any == null)
+            return false;
+        else if (typeof any === 'number')
+            return any != 0;
+        else if (typeof any === 'string') {
+            if (any.match(UnknownValue.IntegerRegex) || any.match(UnknownValue.FloatRegex)) {
+                return parseInt(any, 10) != 0;
+            }
+            else if (any.match(UnknownValue.BooleanTrueRegex))
+                return true;
+            else if (any.match(UnknownValue.BooleanFalseRegex))
+                return false;
+            else if (/^yes$|^on$|^y$|^valid$/i.test(any))
+                return true;
+            else if (/^no$|^off$|^n$|^invalid$/i.test(any))
+                return false;
+            else
+                return false;
+        }
+        else if (typeof any === 'boolean')
+            return any;
+        else {
+            return (parseInt(any) || 0) != 0;
+        }
+    },
+    /**
      *
      * @param {Error|string|{message:string,stack:string}|*} data
      */
