@@ -166,9 +166,10 @@ HttpContext.prototype.init = function() {
  * @param {string} name
  * @param {*=} value
  * @param {Date=} expires
+ * @param {string=} domain
  * @returns {string|undefined}
  */
-HttpContext.prototype.cookie = function(name, value, expires) {
+HttpContext.prototype.cookie = function(name, value, expires, domain) {
     if (typeof value==='undefined')
     {
         if (this.request) {
@@ -179,11 +180,13 @@ HttpContext.prototype.cookie = function(name, value, expires) {
             return null;
     }
     else {
+        var cookieValue = name + '=' + value.toString();
+        if (expires instanceof Date)
+            cookieValue += ';expires=' + expires.toUTCString();
+        if (typeof domain === 'string')
+            cookieValue += ';domain=' + domain;
         if (this.response) {
-            if (expires instanceof Date)
-                this.response.setHeader('Set-Cookie',name + '=' + value + ';expires=' + expires.toUTCString());
-            else
-                this.response.setHeader('Set-Cookie',name + '=' + value);
+            this.response.setHeader('Set-Cookie',cookieValue);
         }
     }
 };
