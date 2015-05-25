@@ -17,7 +17,7 @@
     {
         "status": 404,
         "title": "Not Found",
-        "message": "TThe requested resource could not be found but may be available again in the future."
+        "message": "The requested resource could not be found but may be available again in the future."
     },
     {
         "status": 405,
