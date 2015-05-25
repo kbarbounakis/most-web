@@ -608,7 +608,7 @@ HttpApplication.prototype.setAuthCookie = function (context, username, options)
     }
     var settings = this.config.settings ? (this.config.settings.auth || { }) : { } ;
     settings.name = settings.name || '.MAUTH';
-    context.response.setHeader('Set-Cookie',settings.name.concat('=', this.encypt(value)));
+    context.response.setHeader('Set-Cookie',settings.name.concat('=', this.encypt(value)) + ';path=/');
 };
 
 /**
@@ -1015,23 +1015,23 @@ HttpApplication.prototype.__handleRequest = function (request, response, callbac
     self.processRequest(context, function (err) {
         if (err) {
             if (self.listeners('error').length == 0) {
-                self.onError(response, err, function () {
+                self.onError(context, err, function () {
                     response.end();
-                    callback(err);
+                    callback();
                 });
             }
             else {
                 //raise application error event
-                self.emit('error', function (err) {
+                self.emit('error', { context:context, error:err } , function () {
                     response.end();
-                    callback(err);
+                    callback();
                 });
             }
         }
         else {
             context.finalize(function() {
                 response.end();
-                callback(null);
+                callback();
             });
         }
     });
@@ -1068,38 +1068,138 @@ HttpApplication.prototype.__createRequest = function (options) {
 }
 /**
  * Creates a mock-up server response
- * @param req {ClientRequest}
+ * @param {ClientRequest} req
  * @returns {ServerResponse|*}
  * @private
  */
 HttpApplication.prototype.__createResponse = function (req) {
-    var response = new http.ServerResponse(req);
-    return response;
-}
+    return new http.ServerResponse(req);
+};
 /**
  *
- * @param {ServerResponse} response
- * @param {Error|HttpException} err
+ * @param {HttpContext} context
+ * @param {Error|*} err
+ * @param {function(Error=)} callback
  */
-HttpApplication.prototype.onError = function (response, err, callback) {
-    if (err.stack)
-        console.log(err.stack);
-    callback = callback || function () {
-    };
-    if (!response._headerSent) {
-        if (err instanceof common.HttpException) {
-            response.writeHead(err.status, {"Content-Type": "text/plain"});
-            response.write(err.status + ' ' + err.message + "\n");
+function onHtmlError(context, err, callback) {
+    try {
+        if (common.isNullOrUndefined(context)) {
+            callback(err);
+            return;
+        }
+        var request = context.request, response = context.response, ejs = require('ejs');
+        if (common.isNullOrUndefined(request) || common.isNullOrUndefined(response)) {
+            callback(err);
+            return;
+        }
+        //HTML custom errors
+        if (/text\/html/g.test(request.headers.accept)) {
+            fs.readFile(path.join(__dirname, './http-error.html.ejs'), 'utf8', function (readErr, data) {
+                if (readErr) {
+                    //log process error
+                    common.log(readErr);
+                    //continue error execution
+                    callback(err);
+                    return;
+                }
+                //compile data
+                var str;
+                try {
+                    if (err instanceof common.HttpException) {
+                        str = ejs.render(data, { error:err });
+                    }
+                    else {
+                        var httpErr = new common.HttpException(500, null, err.message);
+                        httpErr.stack = err.stack;
+                        str = ejs.render(data, {error: httpErr});
+                    }
+                }
+                catch (e) {
+                    common.log(e);
+                    //continue error execution
+                    callback(err);
+                    return;
+                }
+                //write status header
+                response.writeHead(err.status || 500 , { "Content-Type": "text/html" });
+                response.write(str);
+                response.end();
+                callback();
+            });
         }
         else {
-            response.writeHead(500, {"Content-Type": "text/plain"});
-            if (typeof err !== 'undefined')
-                response.write(500 + ' ' + err.message + "\n");
-            else
-                response.write(500 + ' Internal Server Error\n');
+            callback(err);
         }
     }
-    callback.call(this);
+    catch (e) {
+        //log process error
+        web.common.log(e);
+        //and continue execution
+        callback(err);
+    }
+
+}
+
+/**
+ *
+ * @param {HttpContext} context
+ * @param {Error|HttpException} err
+ * @param {function()} callback
+ */
+HttpApplication.prototype.onError = function (context, err, callback) {
+    callback = callback || function () { };
+    try {
+        if (err instanceof Error) {
+            //always log error
+            common.log(err);
+            //get response object
+            var response = context.response, ejs = require('ejs');
+            if (common.isNullOrUndefined(response)) {
+                callback.call(this);
+            }
+            if (response._headerSent) {
+                callback.call(this);
+                return;
+            }
+            onHtmlError(context, err, function(err) {
+               if (err) {
+                   //send plain text
+                   response.writeHead(err.status || 500, {"Content-Type": "text/plain"});
+                   //if error is an HTTP Exception
+                   if (err instanceof common.HttpException) {
+                       response.write(err.status + ' ' + err.message + "\n");
+                   }
+                   else {
+                       //otherwise send status 500
+                       response.write('500 ' + err.message + "\n");
+                   }
+                   //send extra data (on development)
+                   if (process.env.NODE_ENV === 'development') {
+                       if (!common.isEmptyString(err.internalMessage)) {
+                           response.write(err.internalMessage + "\n");
+                       }
+                       if (!common.isEmptyString(err.stack)) {
+                           response.write(err.stack + "\n");
+                       }
+                   }
+               }
+                callback.call(this);
+            });
+
+
+        }
+        else {
+            callback.call(this);
+        }
+    }
+    catch (e) {
+        common.log(e);
+        if (context.response) {
+            context.response.writeHead(500, {"Content-Type": "text/plain"});
+            context.response.write("500 Internal Server Error");
+            callback.call(this);
+        }
+    }
 };
 var HTTP_SERVER_DEFAULT_BIND = '127.0.0.1';
 var HTTP_SERVER_DEFAULT_PORT = 3000;
@@ -1134,19 +1234,19 @@ HttpApplication.prototype.start = function (options) {
             self.processRequest(context, function (err) {
                 if (err) {
                     if (self.listeners('error').length == 0) {
-                        self.onError(response, err, function () {
-                            response.end();
+                        self.onError(context, err, function () {
+                            context.response.end();
                         });
                     }
                     else {
                         //raise application error event
-                        self.emit('error', { error:err, request:request, response:response }, function() {
-                            if (response) { response.end(); }
+                        self.emit('error', { context:context, error:err }, function() {
+                            if (context.response) { context.response.end(); }
                         });
                     }
                 }
                 else
-                    response.end();
+                    context.response.end();
             });
         }).listen(opts.port, opts.bind);
         web.common.log(util.format('Web application is running at http://%s:%s/', opts.bind, opts.port));
@@ -1166,6 +1266,7 @@ HttpApplication.prototype.service = function(name, ctor) {
     this.module.service(name, ctor);
     return this;
 };
+
 /**
  * @module most-web
  */
@@ -1195,11 +1296,6 @@ var web = {
             self.current.processRequest(ctx, function(err) {
                 if (err) {
                     ctx.finalize(function() {
-                        if (err.status==404) {
-                            //escape not found HTTP error (node.js express compatibility)
-                            next();
-                            return;
-                        }
                         next(err);
                     });
                 }
@@ -1232,6 +1328,63 @@ var web = {
                     }
                 }
                 next(err);
+            }
+            catch(e) {
+                console.log(e);
+                next(err);
+            }
+        };
+    },
+    /**
+     * Expression handler for HTTP errors.
+     * @param {Object=} options
+     */
+    error: function() {
+        return function(err, request, response, next)
+        {
+            try {
+                var ejs = require('ejs');
+                if (common.isNullOrUndefined(response) || common.isNullOrUndefined(request)) {
+                    next(err);
+                }
+                if (!/text\/html/g.test(request.get('accept'))) {
+                    next(err);
+                }
+                else {
+                    if (response._headerSent) {
+                        next(err);
+                        return;
+                    }
+                    fs.readFile(path.join(__dirname, './http-error.html.ejs'), 'utf8', function (readErr, data) {
+                        if (readErr) {
+                            //log process error
+                            common.log(readErr);
+                            next(err);
+                            return;
+                        }
+                        //compile data
+                        var str;
+                        try {
+                            if (err instanceof common.HttpException) {
+                                str = ejs.render(data, { error:err });
+                            }
+                            else {
+                                var httpErr = new common.HttpException(500, null, err.message);
+                                httpErr.stack = err.stack;
+                                str = ejs.render(data, {error: httpErr});
+                            }
+                        }
+                        catch (e) {
+                            common.log(e);
+                            next(err);
+                            return;
+                        }
+                        //write status header
+                        response.writeHead(err.status || 500 , { "Content-Type": "text/html" });
+                        response.write(str);
+                        response.end();
+                    });
+                }
             }
             catch(e) {
                 console.log(e);

@@ -167,9 +167,11 @@ HttpContext.prototype.init = function() {
  * @param {*=} value
  * @param {Date=} expires
  * @param {string=} domain
+ * @param {string=} cookiePath
  * @returns {string|undefined}
  */
-HttpContext.prototype.cookie = function(name, value, expires, domain) {
+HttpContext.prototype.cookie = function(name, value, expires, domain, cookiePath) {
+
     if (typeof value==='undefined')
     {
         if (this.request) {
@@ -180,17 +182,57 @@ HttpContext.prototype.cookie = function(name, value, expires, domain) {
             return null;
     }
     else {
-        var cookieValue = name + '=' + value.toString();
-        if (expires instanceof Date)
-            cookieValue += ';expires=' + expires.toUTCString();
+        var cookieValue;
+        if (value!=null) {
+            cookieValue = name + '=' + value.toString();
+            if (expires instanceof Date)
+                cookieValue += ';expires=' + expires.toUTCString();
+        }
+        else {
+            cookieValue = name + '=;expires=' + new Date('1970-01-01').toUTCString();
+        }
+        //set default cookie path to root
+        cookiePath = cookiePath || '/';
+        //set cookie domain
         if (typeof domain === 'string')
             cookieValue += ';domain=' + domain;
+        //set cookie path
+        if (typeof cookiePath === 'string')
+            cookieValue += ';path=' + cookiePath;
+        //set cookie
         if (this.response) {
             this.response.setHeader('Set-Cookie',cookieValue);
         }
     }
 };
+/**
+ * @param {string} name - The name of the cookie to be added
+ * @param {string|*} value - The value of the cookie
+ * @param {Date=} expires - An optional parameter which sets cookie's expiration date. If this parameters is missing or is null a session cookie will be set.
+ * @param {string=} domain - An optional parameter which sets the cookie's domain.
+ * @param {string=} cpath - An optional parameter which sets the cookie's path. The default value is the root path.
+ * @returns {string|undefined}
+ */
+HttpContext.prototype.setCookie = function(name, value, expires, domain, cpath) {
+    if (typeof name !== 'string')
+        throw 'Invalid argument. Argument [name] must be a string.';
+    if (typeof value !== 'string')
+        throw 'Invalid argument. Argument [value] must be a string.';
+    this.cookie(name, value, expires, domain, cpath);
+};
 
+/**
+ * @param {string} name - The name of the cookie to be deleted
+ * @param {string=} domain - An optional parameter which indicates cookie's domain.
+ * @param {string=} cpath - An optional parameter which indicates cookie's path. The default value is the root path.
+ * @returns {string|undefined}
+ */
+HttpContext.prototype.removeCookie = function(name, domain, cpath) {
+    if (typeof name !== 'string')
+        throw 'Invalid argument. Argument [name] must be a string.';
+
+    this.cookie(name, null, null , domain, cpath);
+};
 /**
  * Executes the specified code in unattended mode.
  * @param {function(function(Error=, *=))} fn
