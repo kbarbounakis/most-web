@@ -471,10 +471,10 @@ HttpDataController.prototype.index = function(callback)
 
     try {
         var self = this, context = self.context, take = (parseInt(self.context.params.$top) || 0) > 0 ? (parseInt(self.context.params.$top) || 0) : 25;
-        var count = /^true$/ig.test(context.params.attr('$inlinecount')) || false, expand = context.params.attr('$expand');
-        var orderBy = context.params.attr('$orderby') || '',
-            filter = context.params.attr('$filter') || '',
-            asArray = (context.params.attr('$array') || 'false').toLowerCase()=='true';
+        var count = /^true$/ig.test(context.params.attr('$inlinecount')) || false,
+            expand = context.params.attr('$expand'),
+            first = /^true$/ig.test(context.params.attr('$first')) || false,
+            asArray = /^true$/ig.test(context.params.attr('$array')) || false;
         context.handle('GET', function() {
             if (context.request.route) {
                 if (context.request.route.static) {
@@ -496,6 +496,18 @@ HttpDataController.prototype.index = function(callback)
                                     q.expand(x.replace(/\s/g,''));
                                 });
                             }
+                        }
+                        //check $first context param
+                        if (first) {
+                            q.first(function(err, result) {
+                                if (err) {
+                                    callback(common.httpError(err));
+                                }
+                                else {
+                                    callback(null, self.result(result));
+                                }
+                            });
+                            return;
                         }
 
                         var q1 = null;
