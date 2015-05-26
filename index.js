@@ -427,6 +427,7 @@ HttpApplication.prototype.init = function () {
         { name:'multipart',type:'./multipart-handler' },
         { name:'json',type:'./json-handler' },
         { name:'post',type:'./post-handler' },
+        { name:'route',type:'./route-params-handler' },
         { name:'directive',type:'./directive-handler' }
     ];
     for (var i = 0; i < defaultHandlers.length; i++) {
