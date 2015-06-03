@@ -154,80 +154,69 @@ StaticHandler.prototype.processRequest = function(context, callback)
     callback = callback || function() {};
     try {
 
-            /*if (context.request.currentExecutionFileStats)
-            {
-                var stats = context.request.currentExecutionFileStats,
-                    requestETag = context.request.headers['if-none-match'];
-                //generate responseETag
-                var md5 = crypto.createHash('md5');
-                md5.update(stats.mtime.toString());
-                var responseETag = md5.digest('base64');
-                if (requestETag)
-                    if (requestETag==responseETag) {
-                        context.response.writeHead(304);
-                        context.response.end();
-                        callback.call(context);
-                        return;
-                    }
-            }*/
-
             //get current execution path and validate once again file presence and MIME type
-            fs.stat(context.request.currentExecutionPath, function(err, stats) {
-                if (err) {
-                    callback(err);
+        var stats = context.request.currentExecutionFileStats;
+        if (typeof stats === 'undefined' || stats == null) {
+            callback(new app.common.HttpServerError('Invalid request handler.'));
+            return;
+        }
+        if (!stats.isFile()) {
+            callback(new app.common.HttpNotFoundException());
+        }
+        else {
+            //get if-none-match header
+            var requestETag = context.request.headers['if-none-match'];
+            //generate responseETag
+            var md5 = crypto.createHash('md5');
+            md5.update(stats.mtime.toString());
+            var responseETag = md5.digest('base64');
+            if (requestETag)
+                if (requestETag==responseETag) {
+                    context.response.writeHead(304);
+                    context.response.end();
+                    callback.call(context);
+                    return;
                 }
-                else {
-                    if (!stats.isFile()) {
-                        callback(new app.common.HttpNotFoundException());
+            //get file extension
+            var extensionName  = path.extname(context.request.currentExecutionPath);
+            var app = require('./index');
+            //get MIME collection
+            var mimes = app.current.config.mimes;
+            var contentType = null, contentEncoding=null;
+            //find MIME type by extension
+            var mime =mimes.filter(function(x) { return x.extension==extensionName; })[0];
+            if (mime) {
+                contentType = mime.type;
+                if (mime.encoding)
+                    contentEncoding = mime.encoding;
+            }
+
+            //throw exception (MIME not found or access denied)
+            if (contentType==null) {
+                callback(new app.common.HttpForbiddenException())
+            }
+            else {
+                //finally process request
+                fs.readFile(context.request.currentExecutionPath,'binary',function(err, data) {
+                    if (err) {
+                        callback(e);
                     }
                     else {
-                        //get if-none-match header
-                        var requestETag = context.request.headers['if-none-match'];
-                        //generate responseETag
-                        var md5 = crypto.createHash('md5');
-                        md5.update(stats.mtime.toString());
-                        var responseETag = md5.digest('base64');
-                        if (requestETag)
-                            if (requestETag==responseETag) {
-                                context.response.writeHead(304);
-                                context.response.end();
-                                callback.call(context);
-                                return;
-                            }
-                        //get file extension
-                        var extensionName  = path.extname(context.request.currentExecutionPath);
-                        var app = require('./index');
-                        //get MIME collection
-                        var mimes = app.current.config.mimes;
-                        var contentType = null, contentEncoding=null;
-                        //find MIME type by extension
-                        var mime =mimes.filter(function(x) { return x.extension==extensionName; })[0];
-                        if (mime) {
-                            contentType = mime.type;
-                            if (mime.encoding)
-                                contentEncoding = mime.encoding;
-                        }
-
-                        //throw exception (MIME not found or access denied)
-                        if (contentType==null) {
-                            callback(new app.common.HttpForbiddenException())
-                        }
-                        else {
-                            //finally process request
-                            fs.readFile(context.request.currentExecutionPath,'binary',function(err, data) {
-                                if (err) {
-                                    callback(e);
-                                }
-                                else {
-                                    context.response.writeHead(200, {'Content-Type': contentType + (contentEncoding ? ';charset=' + contentEncoding : ''), 'ETag' : responseETag});
-                                    context.response.write(data, "binary");
-                                    callback(null);
-                                }
-                            });
-                        }
+                        context.response.writeHead(200, {'Content-Type': contentType + (contentEncoding ? ';charset=' + contentEncoding : ''), 'ETag' : responseETag});
+                        context.response.write(data, "binary");
+                        callback(null);
                     }
-                }
-            });
+                });
+            }
+        }
+            //fs.stat(context.request.currentExecutionPath, function(err, stats) {
+            //    if (err) {
+            //        callback(err);
+            //    }
+            //    else {
+            //
+            //    }
+            //});
         }
         catch (e) {
         callback.call(context, e);
