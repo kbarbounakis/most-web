@@ -8,7 +8,7 @@
  * Released under the BSD3-Clause license
  * Date: 2014-06-09
  */
-var util = require('util'), errors = require('./http-error-codes.json');
+var util = require('util'), errors = require('./http-error-codes.json'), crypto = require('crypto');
 
 /**
  * Abstract Method Exception class
@@ -639,6 +639,22 @@ var common = {
     },
     getBasicAuthHeader: function(username, password) {
         return "Basic " + (new Buffer(username +':'+password)).toString('base64');
+    },
+    md5 : function(value) {
+        if (typeof value === 'undefined' || value == null) {
+            return;
+        }
+        var md5 = crypto.createHash('md5');
+        if (typeof value === 'string') {
+            md5.update(value);
+        }
+        else if (value instanceof Date) {
+            md5.update(value.toUTCString());
+        }
+        else {
+            md5.update(JSON.stringify(value));
+        }
+        return md5.digest('hex');
     }
 };
 

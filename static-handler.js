@@ -172,7 +172,8 @@ StaticHandler.prototype.processRequest = function(context, callback)
             var responseETag = md5.digest('base64');
             if (requestETag)
                 if (requestETag==responseETag) {
-                    context.response.writeHead(304);
+                    //context.response.writeHead(304, { 'Last-Modified':stats.mtime.toUTCString() });
+                    context.response.writeHead(304, { });
                     context.response.end();
                     callback.call(context);
                     return;
