@@ -374,9 +374,12 @@ HttpDataController.prototype.filter = function (callback) {
                             if (field) {
                                 fields.push(field.name);
                             }
+                            else if (/\//.test(item)) {
+                                fields.push(item);
+                            }
                         }
                         if (fields.length>0) {
-                            q.query.groupBy(fields);
+                            q.groupBy(fields);
                         }
                     }
                     //set $select
@@ -386,13 +389,15 @@ HttpDataController.prototype.filter = function (callback) {
                         for (var i = 0; i < arr.length; i++) {
                             var item = string(arr[i]).trim().toString();
                             var field = self.model.field(item);
-                            if (field)
+                            if (field) {
                                 fields.push(field.name);
-                            else {
-                                //validate aggregate functions
-                                if (/(count|avg|sum|min|max)\((.*?)\)/i.test(item)) {
+                            }
+                            else if (/(count|avg|sum|min|max)\((.*?)\)/i.test(item)) {
                                     fields.push(q.fieldOf(item));
                                 }
+                            else if (/\//.test(item)) {
+                                //pass nested field as string
+                                fields.push(item);
                             }
                         }
                         if (fields.length>0) {
@@ -429,6 +434,12 @@ HttpDataController.prototype.filter = function (callback) {
                                 var field = self.model.field(name);
                                 //validate model field
                                 if (field) {
+                                    if (direction=='desc')
+                                        q.orderByDescending(name);
+                                    else
+                                        q.orderBy(name);
+                                }
+                                else if (/\//.test(name)) {
                                     if (direction=='desc')
                                         q.orderByDescending(name);
                                     else
