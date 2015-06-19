@@ -374,6 +374,9 @@ HttpDataController.prototype.filter = function (callback) {
                             if (field) {
                                 fields.push(field.name);
                             }
+                            else if (/(\w+)\((.*?)\)/i.test(item)) {
+                                fields.push(q.fieldOf(item));
+                            }
                             else if (/\//.test(item)) {
                                 fields.push(item);
                             }
@@ -392,9 +395,9 @@ HttpDataController.prototype.filter = function (callback) {
                             if (field) {
                                 fields.push(field.name);
                             }
-                            else if (/(count|avg|sum|min|max)\((.*?)\)/i.test(item)) {
-                                    fields.push(q.fieldOf(item));
-                                }
+                            else if (/(\w+)\((.*?)\)/i.test(item)) {
+                                fields.push(q.fieldOf(item));
+                            }
                             else if (/\//.test(item)) {
                                 //pass nested field as string
                                 fields.push(item);
@@ -439,14 +442,14 @@ HttpDataController.prototype.filter = function (callback) {
                                     else
                                         q.orderBy(name);
                                 }
-                                else if (/\//.test(name)) {
+                                //validate aggregate functions or associated field expression e.g. user/username
+                                else if (/(\w+)\((.*?)\)/i.test(name) || /\//.test(name)) {
                                     if (direction=='desc')
                                         q.orderByDescending(name);
                                     else
                                         q.orderBy(name);
                                 }
-                                //validate aggregate functions or associated field expression e.g. user/username
-                                else if (/(count|avg|sum|min|max)\((.*?)\)/i.test(name) || /\//.test(name)) {
+                                else if (/\//.test(name)) {
                                     if (direction=='desc')
                                         q.orderByDescending(name);
                                     else
