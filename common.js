@@ -36,10 +36,10 @@ util.inherits(FileNotFoundException, Error);
  * @class HttpException
  * @param {number=} status
  * @param {string=} message
- * @param {string=} internalMessage
+ * @param {string=} innerMessage
  * @constructor
  */
-function HttpException(status, message, internalMessage) {
+function HttpException(status, message, innerMessage) {
     var hstatus = (typeof status==='undefined' || status == null) ? 500 : parseInt(status);
     var err = errors.find(function(x) { return x.status === hstatus; });
     if (err) {
@@ -52,7 +52,7 @@ function HttpException(status, message, internalMessage) {
         this.message = message || 'The server encountered an internal error and was unable to complete the request.';
         this.status = hstatus
     }
-    this.internalMessage = internalMessage;
+    this.innerMessage = innerMessage;
 }
 
 /**
@@ -76,11 +76,11 @@ util.inherits(HttpException, Error);
  * HTTP 400 Bad Request exception class
  * @class HttpBadRequest
  * @param {string=} message
- * @param {string=} internalMessage
+ * @param {string=} innerMessage
  * @augments HttpException
  * */
-function HttpBadRequest(message, internalMessage) {
-    HttpBadRequest.super_.call(this, 400, message , internalMessage);
+function HttpBadRequest(message, innerMessage) {
+    HttpBadRequest.super_.call(this, 400, message , innerMessage);
 
 }
 util.inherits(HttpBadRequest, HttpException);
@@ -88,11 +88,11 @@ util.inherits(HttpBadRequest, HttpException);
  * HTTP 404 Not Found Exception class
  * @class HttpNotFoundException
  * @param {string=} message
- * @param {string=} internalMessage
+ * @param {string=} innerMessage
  * @augments HttpException
  * */
- function HttpNotFoundException(message, internalMessage) {
-    HttpNotFoundException.super_.call(this, 404, message, internalMessage);
+ function HttpNotFoundException(message, innerMessage) {
+    HttpNotFoundException.super_.call(this, 404, message, innerMessage);
 
 }
 util.inherits(HttpNotFoundException, HttpException);
@@ -100,11 +100,11 @@ util.inherits(HttpNotFoundException, HttpException);
  * HTTP 405 Method Not Allowed exception class
  * @class HttpMethodNotAllowed
  * @param {string=} message
- * @param {string=} internalMessage
+ * @param {string=} innerMessage
  * @augments HttpException
  * */
-function HttpMethodNotAllowed(message, internalMessage) {
-    HttpMethodNotAllowed.super_.call(this, 405, message, internalMessage);
+function HttpMethodNotAllowed(message, innerMessage) {
+    HttpMethodNotAllowed.super_.call(this, 405, message, innerMessage);
 
 }
 util.inherits(HttpMethodNotAllowed, HttpException);
@@ -112,22 +112,22 @@ util.inherits(HttpMethodNotAllowed, HttpException);
  * HTTP 401 Unauthorized Exception class
  * @class HttpUnauthorizedException
  * @param {string=} message
- * @param {string=} internalMessage
+ * @param {string=} innerMessage
  * @augments HttpException
  * */
-function HttpUnauthorizedException(message, internalMessage) {
-    HttpUnauthorizedException.super_.call(this, 401, message, internalMessage);
+function HttpUnauthorizedException(message, innerMessage) {
+    HttpUnauthorizedException.super_.call(this, 401, message, innerMessage);
 }
 util.inherits(HttpUnauthorizedException, HttpException);
 /**
  * HTTP 403 Forbidden Exception class
  * @class HttpForbiddenException
  * @param {string=} message
- * @param {string=} internalMessage
+ * @param {string=} innerMessage
  * @augments HttpException
  * */
-function HttpForbiddenException(message, internalMessage) {
-    HttpForbiddenException.super_.call(this, 403, message, internalMessage);
+function HttpForbiddenException(message, innerMessage) {
+    HttpForbiddenException.super_.call(this, 403, message, innerMessage);
 }
 util.inherits(HttpForbiddenException, HttpException);
 
@@ -135,11 +135,11 @@ util.inherits(HttpForbiddenException, HttpException);
  * HTTP 500 Internal Server Error Exception class
  * @class HttpServerError
  * @param {string=} message
- * @param {string=} internalMessage
+ * @param {string=} innerMessage
  * @augments HttpException
  * */
-function HttpServerError(message, internalMessage) {
-    HttpServerError.super_.call(this, 500, message , internalMessage);
+function HttpServerError(message, innerMessage) {
+    HttpServerError.super_.call(this, 500, message , innerMessage);
 }
 util.inherits(HttpServerError, HttpException);
 

@@ -1176,8 +1176,8 @@ HttpApplication.prototype.onError = function (context, err, callback) {
                    }
                    //send extra data (on development)
                    if (process.env.NODE_ENV === 'development') {
-                       if (!common.isEmptyString(err.internalMessage)) {
-                           response.write(err.internalMessage + "\n");
+                       if (!common.isEmptyString(err.innerMessage)) {
+                           response.write(err.innerMessage + "\n");
                        }
                        if (!common.isEmptyString(err.stack)) {
                            response.write(err.stack + "\n");

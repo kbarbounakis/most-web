@@ -35,9 +35,9 @@
         <h1 class="error-number text-center"><%=(locals.error.status || 500)%></h1>
         <h1 class="text-center"><%= (locals.error.title || 'Internal Server Error')%></h1>
         <p class="text-center"><%= (locals.error.message || 'The server encountered an internal error and was unable to complete your request.')%></p>
-        <% if ((process.env.NODE_ENV === 'development') && (locals.error.internalMessage)) { %>
+        <% if ((process.env.NODE_ENV === 'development') && (locals.error.innerMessage)) { %>
             <p class="text-center">
-                <%=(locals.error.internalMessage)%>
+                <%=(locals.error.innerMessage)%>
             </p>
         <% } %>
         <% if ((process.env.NODE_ENV === 'development') && (locals.error.stack)) { %>
