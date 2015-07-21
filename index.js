@@ -371,6 +371,9 @@ function HttpApplication() {
             $cache = new HttpCache();
             return $cache;
         },
+        set: function(value) {
+          $cache = value;
+        },
         configurable: false,
         enumerable: false
     });
