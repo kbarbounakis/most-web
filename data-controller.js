@@ -484,11 +484,14 @@ HttpDataController.prototype.index = function(callback)
 {
 
     try {
-        var self = this, context = self.context, take = (parseInt(self.context.params.$top) || 0) > 0 ? (parseInt(self.context.params.$top) || 0) : 25;
+        var self = this, context = self.context,
+            top = parseInt(self.context.params.$top),
+            take = top > 0 ? top : (top == -1 ? top : 25);
         var count = /^true$/ig.test(context.params.attr('$inlinecount')) || false,
             expand = context.params.attr('$expand'),
             first = /^true$/ig.test(context.params.attr('$first')) || false,
             asArray = /^true$/ig.test(context.params.attr('$array')) || false;
+        common.debug(context.request.url);
         context.handle('GET', function() {
             if (context.request.route) {
                 if (context.request.route.static) {
