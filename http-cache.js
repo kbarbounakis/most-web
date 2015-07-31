@@ -12,12 +12,15 @@ var dat = require('most-data'), util = require('util');
 /**
  * Implements the cache for a data application.
  * @class HttpCache
- * @property {Number} ttl
+ * @param {{ttl:number}|*} options
  * @constructor
  * @augments EventEmitter2
  */
-function HttpCache() {
+function HttpCache(options) {
     this.initialized = false;
+    options = options || {};
+    options.ttl = options.ttl || (20*60);
+    this.options = options;
 }
 util.inherits(HttpCache, dat.types.EventEmitter2);
 /**
@@ -85,6 +88,8 @@ HttpCache.prototype.removeAll = function(callback) {
  */
 HttpCache.prototype.add = function(key, value, ttl, callback) {
     var self = this;
+    if (typeof ttl === 'undefined')
+        ttl = self.options.ttl;
     callback = callback || function() {};
     self.init(function(err) {
        if (err) {
@@ -123,7 +128,7 @@ HttpCache.prototype.ensure = function(key, fn, callback) {
             fn(function(err, result) {
                 if (err) { callback(err); return; }
                 //add to cache
-                self.add(key, (typeof result === 'undefined') ? null: result, self.ttl, function() {
+                self.add(key, (typeof result === 'undefined') ? null: result, self.options.ttl, function() {
                     //and return result
                     callback(null, result);
                 });
