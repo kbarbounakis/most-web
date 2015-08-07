@@ -382,6 +382,12 @@ function HttpApplication() {
      * @type {string}
      */
     this.development = (process.env.NODE_ENV === 'development');
+    /**
+     *
+     * @type {{html, text, json, unauthorized}|*}
+     */
+    this.errors = httpApplicationErrors(this);
+
 }
 
 util.inherits(HttpApplication, da.types.EventEmitter2);
@@ -809,15 +815,17 @@ HttpApplication.prototype.executeExternalRequest = function(options,data, callba
                 headers: res.headers,
                 body:data,
                 encoding:'utf8'
-            }
+            };
+            /**
+             * destroy sockets (manually close an unused socket) ?
+             */
             callback(null, result);
-        })
+        });
     });
     req.on('error', function(e) {
         //return error
         callback(e);
     });
-
     if(data)
     {
         if (typeof data ==="object" )
@@ -1239,18 +1247,28 @@ HttpApplication.prototype.start = function (options) {
                 if (err) {
                     if (self.listeners('error').length == 0) {
                         self.onError(context, err, function () {
-                            context.response.end();
+                            if (typeof context === 'undefined' || context == null) { return; }
+                            context.finalize(function() {
+                                if (context.response) { context.response.end(); }
+                            });
                         });
                     }
                     else {
                         //raise application error event
                         self.emit('error', { context:context, error:err }, function() {
-                            if (context.response) { context.response.end(); }
+                            if (typeof context === 'undefined' || context == null) { return; }
+                            context.finalize(function() {
+                                if (context.response) { context.response.end(); }
+                            });
                         });
                     }
                 }
-                else
-                    context.response.end();
+                else {
+                    if (typeof context === 'undefined' || context == null) { return; }
+                    context.finalize(function() {
+                        if (context.response) { context.response.end(); }
+                    });
+                }
             });
         }).listen(opts.port, opts.bind);
         web.common.log(util.format('Web application is running at http://%s:%s/', opts.bind, opts.port));
@@ -1270,6 +1288,122 @@ HttpApplication.prototype.service = function(name, ctor) {
     this.module.service(name, ctor);
     return this;
 };
+
+function httpApplicationErrors(application) {
+    var self = application;
+    return {
+        /**
+         *
+         * @param {HttpContext} context
+         * @param {Error|*} error
+         * @param {function(Error=)} callback
+         */
+        html: function(context, error, callback) {
+            callback = callback || function () { };
+            onHtmlError(context, error, function(err) {
+                callback.call(self, err);
+            });
+        },
+        /**
+         *
+         * @param {HttpContext} context
+         * @param {Error|HttpException|*} error
+         * @param {function(Error=)} callback
+         */
+        text: function(context, error, callback) {
+            callback = callback || function () { };
+            /**
+             * @type {ServerResponse}
+             */
+            var response = context.response;
+            if (error) {
+                //send plain text
+                response.writeHead(error.status || 500, {"Content-Type": "text/plain"});
+                //if error is an HTTP Exception
+                if (error instanceof common.HttpException) {
+                    response.write(error.status + ' ' + error.message + "\n");
+                }
+                else {
+                    //otherwise send status 500
+                    response.write('500 ' + error.message + "\n");
+                }
+                //send extra data (on development)
+                if (process.env.NODE_ENV === 'development') {
+                    if (!common.isEmptyString(error.innerMessage)) {
+                        response.write(error.innerMessage + "\n");
+                    }
+                    if (!common.isEmptyString(error.stack)) {
+                        response.write(error.stack + "\n");
+                    }
+                }
+            }
+            callback.call(this);
+        },
+        /**
+         *
+         * @param {HttpContext} context
+         * @param {Error|HttpException|*} error
+         * @param {function(Error=)} callback
+         */
+        json: function(context, error, callback) {
+            callback = callback || function () { };
+            context.request.headers = context.request.headers || { };
+            if (/application\/json/g.test(context.request.headers.accept)) {
+                //prepare JSON result
+                var result;
+                if ((err instanceof common.HttpException) || (typeof err.status !== 'undefined')) {
+                    result = new mvc.HttpJsonResult({ status:error.status, code:error.code, message:error.message, innerMessage: error.innerMessage });
+                }
+                else if (process.env.NODE_ENV === 'development') {
+                    result = new mvc.HttpJsonResult(err);
+                }
+                else {
+                    result = new mvc.HttpJsonResult(new common.HttpServerError());
+                }
+                //execute redirect result
+                result.execute(context, function(err) {
+                    callback.call(self, err);
+                });
+                return;
+            }
+            //go to next error if any
+            callback.call(self, error);
+        },
+        /**
+         *
+         * @param {HttpContext} context
+         * @param {Error|*} error
+         * @param {function(Error=)} callback
+         */
+        unauthorized: function(context, error, callback) {
+            if (common.isNullOrUndefined(context) || common.isNullOrUndefined(context)) {
+                return callback.call(self);
+            }
+            if (error.status != 401) {
+                //go to next error if any
+                return callback.call(self, error);
+            }
+            context.request.headers = context.request.headers || { };
+            if (/text\/html/g.test(context.request.headers.accept)) {
+                if (self.config.settings) {
+                    if (self.config.settings.auth) {
+                        //get login page from configuration
+                        var page = self.config.settings.auth.loginPage || '/login.html';
+                        //prepare redirect result
+                        var result = new mvc.HttpRedirectResult(page.concat('?returnUrl=', encodeURIComponent(context.request.url)));
+                        //execute redirect result
+                        result.execute(context, function(err) {
+                            callback.call(self, err);
+                        });
+                        return;
+                    }
+                }
+            }
+            //go to next error if any
+            callback.call(self, error);
+        }
+    }
+}
 
 /**
  * @module most-web
@@ -1296,6 +1430,20 @@ var web = {
         return function runtimeParser(req, res, next) {
             //create context
             var ctx = self.current.createContext(req,res);
+            ctx.request.on('close', function() {
+                //client was disconnected abnormally
+                //finalize data context
+                if (typeof ctx !== 'undefined' && ctx !=null) {
+                    ctx.finalize(function() {
+                        if (ctx.response) {
+                            //if response is alive
+                            if (ctx.response.finished == false)
+                                //end response
+                                ctx.response.end();
+                        }
+                    });
+                }
+            });
             //process request
             self.current.processRequest(ctx, function(err) {
                 if (err) {
