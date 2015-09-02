@@ -123,16 +123,31 @@ function HttpContext(httpRequest, httpResponse) {
         }, configurable: false, enumerable: false
     });
 
-    var $jQuery = null;
+    var jq = null, ng = null, doc, self = this;
     /**
-     * @property {jQuery|HTMLElement|*} $ - Gets a collection of HTTP Request cookies
+     * @property {jQuery|HTMLElement|*} $ - Gets server jQuery module
      */
     Object.defineProperty(this, '$', {
         get: function () {
-            if ($jQuery)
-                return $jQuery;
-            $jQuery =  require('./index').jQuery();
-            return $jQuery;
+            if (jq)
+                return jq;
+            if (typeof doc === 'undefined')
+                doc = self.application.document();
+            jq =  doc.parentWindow.jQuery;
+            return jq;
+        }, configurable: false, enumerable: false
+    });
+    /**
+     * @property {angular} angular - Gets server angular module
+     */
+    Object.defineProperty(this, 'angular', {
+        get: function () {
+            if (ng)
+                return ng;
+            if (typeof doc === 'undefined')
+                doc = self.application.document();
+            ng =  doc.parentWindow.angular;
+            return ng;
         }, configurable: false, enumerable: false
     });
     /**
@@ -548,7 +563,12 @@ HttpContext.prototype.currentHandler = function (value) {
         this.request.currentHandler = value;
     }
 };
-
+/**
+ * Translates the given string to the language specified in this context
+ * @param {string} text - The string to translate
+ * @param {string=} lib - A string that represents the library which contains the source string. This arguments is optional. If this argument is missing, then the operation will use the default (global) library.
+ * @returns {*}
+ */
 HttpContext.prototype.translate = function(text, lib) {
     try {
         var self = this, app = self.application;
@@ -590,7 +610,13 @@ HttpContext.prototype.translate = function(text, lib) {
         return text;
     }
 };
-
+/**
+ * Translates the given string to the language specified in this context
+ * @param {string} text - The string to translate
+ * @param {string=} lib - A string that represents the library which contains the source string. This arguments is optional. If this argument is missing, then the operation will use the default (global) library.
+ * @returns {*}
+ */
+HttpContext.prototype.t = HttpContext.prototype.translate;
 
 if (typeof exports !== 'undefined')
     module.exports = {
