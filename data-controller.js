@@ -395,7 +395,7 @@ HttpDataController.prototype.filter = function (callback) {
                             if (field) {
                                 fields.push(field.name);
                             }
-                            else if (/(\w+)\((.*?)\)/i.test(item)) {
+                            else if (/(\w+)\((.*?)\)/i.test(item) || /^(\w+)\s+as\s+(.*?)$/i.test(item)) {
                                 fields.push(q.fieldOf(item));
                             }
                             else if (/\//.test(item)) {
