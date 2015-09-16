@@ -515,6 +515,12 @@ HttpController.prototype.html = function(data)
 {
     return new HttpViewResult(null, data);
 };
+/**
+ * Creates a view result object for the given request.
+ * @param {*=} data
+ * @returns HttpViewResult
+ * */
+HttpController.prototype.htm = HttpController.prototype.html;
 
 /**
  * Creates a view result object for the given request.

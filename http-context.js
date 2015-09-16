@@ -18,6 +18,9 @@ var path = require('path'),
     common = require('./common');
 /**
  * Creates an instance of HttpContext class.
+ * @class HttpContext
+ * @property {{extension:string,type:string}} mime - Gets an object which represents the mime type associated with this context.
+ * @property {string} format - Gets a string which represents the response format of this context (e.g html, json, js etc).
  * @constructor
  * @augments DataContext
  * @augments EventEmitter2
@@ -50,13 +53,34 @@ function HttpContext(httpRequest, httpResponse) {
         }, configurable: false, enumerable: false
     });
     var self = this;
-    /**
-     * @type {undefined}
-     */
-    this.mime = undefined;
     Object.defineProperty(this, 'mime', {
         get: function () {
-            return self.application.resolveMime(self.request.url);
+            var res = self.application.resolveMime(self.request.url);
+            //if no extension is defined
+            if (typeof res === 'undefined' || res == null) {
+                //resolve the defined mime type by filter application mime types
+                if (self.params && self.params.mime) {
+                    res = self.application.config.mimes.find(function(x) {
+                       return x.type === self.params.mime;
+                    });
+                }
+                //or try to get accept header (e.g. text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8)
+                else if (self.request && self.request.headers) {
+                    //get and split ACCEPT HTTP header
+                    var accept = self.request.headers['accept'], arr = accept.split(';');
+                    if (arr[0]) {
+                        //get acceptable mime types
+                        var mimes = arr[0].split(',');
+                        if (mimes.length>0) {
+                            //try to find the application mime associated with the first acceptable mime type
+                            res = self.application.config.mimes.find(function(x) {
+                                return x.type === mimes[0];
+                            });
+                        }
+                    }
+                }
+            }
+            return res;
         }, configurable: false, enumerable: false
     });
 
@@ -64,8 +88,17 @@ function HttpContext(httpRequest, httpResponse) {
         get: function () {
             var uri = url.parse(self.request.url);
             var result = path.extname(uri.pathname);
-            if (result)
+            if (result) {
                 return result.substr(1).toLowerCase();
+            }
+            else {
+                //get mime type
+                var mime = self.mime;
+                if (mime) {
+                    //and return the extension associated with this mime
+                    return mime.extension.substr(1).toLowerCase();
+                }
+            }
         }, configurable: false, enumerable: false
     });
 
