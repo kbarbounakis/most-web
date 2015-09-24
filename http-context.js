@@ -651,6 +651,22 @@ HttpContext.prototype.translate = function(text, lib) {
  */
 HttpContext.prototype.t = HttpContext.prototype.translate;
 
+/**
+ * Creates an instance of a view engine based on the given extension (e.g. ejs, md etc)
+ * @param {string} extension
+ * @returns {*}
+ */
+HttpContext.prototype.engine = function(extension) {
+    var item = this.application.config.engines.find(function(x) { return x.extension===extension; });
+    if (item) {
+        var engine = require(item.type);
+        if (typeof engine.createInstance !== 'function') {
+            throw new Error('Invalid view engine module.')
+        }
+        return engine.createInstance(this);
+    }
+};
+
 if (typeof exports !== 'undefined')
     module.exports = {
         /**
