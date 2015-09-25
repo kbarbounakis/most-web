@@ -398,18 +398,59 @@ util.inherits(HttpApplication, da.types.EventEmitter2);
  */
 HttpApplication.prototype.init = function () {
 
-    /* process.on('uncaughtException', function(err) {
-     // handle the error safely
-     console.log(err);
-     if (err.stack)
-     console.log(err.stack);
-     });*/
-
     /**
      * Gets or sets application configuration settings
-     * @type {ApplicationConfig}
      */
-    this.config = ApplicationConfig.loadSync('app.json');
+    //get node environment
+    var env = process.env['NODE_ENV'] || 'production', str;
+    //first of all try to load environment specific configuration
+    try {
+        common.log(util.format('Init: Loading environment specific configuration file (app.%s.json)', env));
+        str = path.join(process.cwd(), 'config', 'app.' + env + '.json');
+        /**
+         * @type {ApplicationConfig}
+         */
+        this.config = require(str);
+        common.log(util.format('Init: Environment specific configuration file (app.%s.json) was succesfully loaded.', env));
+    }
+    catch (e) {
+        if (e.code === 'MODULE_NOT_FOUND') {
+            common.log(util.format('Init: Environment specific configuration file (app.%s.json) is missing.', env));
+            //try to load default configuration file
+            try {
+                common.log('Init: Loading environment default configuration file (app.json)');
+                str = path.join(process.cwd(), 'config', 'app.json');
+                /**
+                 * @type {ApplicationConfig}
+                 */
+                this.config = require(str);
+                common.log('Init: Default configuration file (app.json) was succesfully loaded.');
+            }
+            catch (e) {
+                if (e.code === 'MODULE_NOT_FOUND') {
+                    common.log('Init: An error occured while loading default configuration (app.json). Configuration cannot be found or is inaccesible.');
+                    //load internal configuration file
+                    /**
+                     * @type {ApplicationConfig}
+                     */
+                    this.config = require('./app.json');
+                    this.config.settings.crypto = {
+                        "algorithm": "aes256",
+                        "key": common.randomHex(32)
+                    };
+                    common.log('Init: Internal configuration file (app.json) was succesfully loaded.');
+                }
+                else {
+                    common.log('Init: An error occured while loading default configuration (app.json)');
+                    throw e;
+                }
+            }
+        }
+        else {
+            common.log(util.format('Init: An error occured while loading application specific configuration (app).', env));
+            throw e;
+        }
+    }
     //load routes (if empty)
     if (this.config.routes == null)
         this.config.routes = ApplicationConfig.loadSync('routes.json');
