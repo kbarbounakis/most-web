@@ -44,6 +44,10 @@ HttpResult.prototype.execute = function(context, callback) {
     callback = callback || function() {};
     try {
         var response = context.response;
+        if (typeof this.data === 'undefined') {
+            response.writeHead(204);
+            return callback.call(context);
+        }
         response.writeHead(this.responseStatus || 200, {"Content-Type": this.contentType});
        if (this.data)
             response.write(this.data, this.contentEncoding);
