@@ -89,30 +89,6 @@ function ApplicationConfig() {
     this.locales = { };
 
 }
-/**
- *
- * @param {String} file The configuration file path
- * @param {Boolean=} throwOnMissing Raise exception if file is missing. If this parameter is false and the file is missing
- * then the operation will return null.
- * @returns {*}
- */
-ApplicationConfig.loadSync = function (file, throwOnMissing) {
-    try {
-        var throwError = throwOnMissing === undefined ? true : throwOnMissing == true;
-        if (!fs.existsSync(path.join(process.cwd(), 'config', file))) {
-            if (throwError)
-                throw new Error('The specified configuration file is missing.');
-            else
-                return null;
-        }
-        //load JSON formatted configuration file
-        var data = fs.readFileSync(path.join(process.cwd(), 'config', file), 'utf8');
-        //return JSON object
-        return JSON.parse(data);
-    } catch (e) {
-        throw e;
-    }
-};
 
 /**
  * Abstract class that represents a data context
@@ -452,11 +428,33 @@ HttpApplication.prototype.init = function () {
         }
     }
     //load routes (if empty)
-    if (this.config.routes == null)
-        this.config.routes = ApplicationConfig.loadSync('routes.json');
+    if (web.common.isNullOrUndefined(this.config.routes)) {
+        try {
+            this.config.routes = require(path.join(process.cwd(),'config/routes.json'));
+        }
+        catch(e) {
+            if (e.code === 'MODULE_NOT_FOUND') {
+                //load internal default route file
+                web.common.log('Init: Application specific routes configuration cannot be found. The default routes configuration will be loaded instead.');
+                this.config.routes = require('./routes.json');
+            }
+            else {
+                web.common.log('Init: An error occured while trying to load application routes configuration.');
+                throw e;
+            }
+        }
+    }
     //load data types (if empty)
-    if (this.config.dataTypes == null)
-        this.config.dataTypes = ApplicationConfig.loadSync('dataTypes.json');
+    if (web.common.isNullOrUndefined(this.config.dataTypes))
+    {
+        try {
+            this.config.dataTypes = da.cfg.current.dataTypes;
+        }
+        catch(e) {
+            web.common.log('Init: An error occured while trying to load application data types configuration.');
+            throw e;
+        }
+    }
 
     //set settings default
     this.config.settings = this.config.settings || {};
@@ -466,20 +464,9 @@ HttpApplication.prototype.init = function () {
     //so they should not hold information about http context and execution lifecycle.
     var self = this;
 
-    var handlers = self.config.handlers || [];
+    var handlers = self.config.handlers || [], defaultApplicationConfig = require('./app.json');
     //default handlers
-    var defaultHandlers = [
-        { name:'query',type:'./querystring-handler' },
-        { name:'auth',type:'./auth-handler' },
-        { name:'basic-auth',type:'./basic-auth-handler' },
-        { name:'static',type:'./static-handler' },
-        { name:'mvc',type:'./view-handler' },
-        { name:'multipart',type:'./multipart-handler' },
-        { name:'json',type:'./json-handler' },
-        { name:'post',type:'./post-handler' },
-        { name:'route',type:'./route-params-handler' },
-        { name:'directive',type:'./directive-handler' }
-    ];
+    var defaultHandlers = defaultApplicationConfig.handlers;
     for (var i = 0; i < defaultHandlers.length; i++) {
         (function(item) {
             if (typeof handlers.filter(function(x) { return x.name === item.name; })[0] === 'undefined') {

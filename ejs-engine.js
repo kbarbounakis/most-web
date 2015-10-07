@@ -53,12 +53,11 @@ EjsEngine.prototype.render = function(path, data, callback) {
                     }
                     else {
                         //get view header (if any)
-                        var matcher = new RegExp('<%#(.*?)%>');
+                        var matcher = /^(\s*)<%#(.*?)%>/;
                         var properties = { layout:null };
                         if (matcher.test(str)) {
                             var matches = matcher.exec(str);
-                            //get matches[1] because matches[0] contains the expression with tags
-                            properties = JSON.parse(matches[1]);
+                            properties = JSON.parse(matches[2]);
                             //remove match
                             str = str.replace(matcher,'');
                         }

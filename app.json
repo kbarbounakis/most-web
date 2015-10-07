@@ -1,5 +1,15 @@
 {
     "handlers": [
+        { "name":"query","type":"./querystring-handler" },
+        { "name":"auth","type":"./auth-handler" },
+        { "name":"basic-auth","type":"./basic-auth-handler" },
+        { "name":"static","type":"./static-handler" },
+        { "name":"mvc","type":"./view-handler" },
+        { "name":"multipart","type":"./multipart-handler" },
+        { "name":"json","type":"./json-handler" },
+        { "name":"post","type":"./post-handler" },
+        { "name":"route","type":"./route-params-handler" },
+        { "name":"directive","type":"./directive-handler" }
     ],
     "engines": [
         { "name": "EJS View Engine", "extension": "ejs", "type": "./ejs-engine" }
