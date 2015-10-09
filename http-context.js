@@ -287,7 +287,7 @@ HttpContext.prototype.removeCookie = function(name, domain, cpath) {
  * @param {function(Error=, *=)} callback
  */
 HttpContext.prototype.unattended = function(fn, callback) {
-    var self = this;
+    var self = this, interactiveUser;
     callback = callback || function() {};
     fn = fn || function() {};
     if (self._unattended) {
@@ -303,12 +303,10 @@ HttpContext.prototype.unattended = function(fn, callback) {
     }
     //get unattended execution account
     self.application.config.settings.auth = self.application.config.settings.auth || {};
-    var account = self.application.config.settings.auth.unattendedExecutionAccount,
-        interactiveUser = { name:'anonymous',authenticationType:'None' };
+    var account = self.application.config.settings.auth.unattendedExecutionAccount;
     //get interactive user
     if (this.user) {
-        interactiveUser.name = this.user.name;
-        interactiveUser.authenticationType = this.user.authenticationType;
+        interactiveUser = { name:this.user.name,authenticationType: this.user.authenticationType };
         //setting interactive user
         self.interactiveUser = interactiveUser;
     }
@@ -319,14 +317,19 @@ HttpContext.prototype.unattended = function(fn, callback) {
         self._unattended = true;
         fn.call(self, function(err, result) {
             //restore user
-            self.user = util._extend({ }, interactiveUser);
+            if (interactiveUser) {
+                self.user = util._extend({ }, interactiveUser);
+            }
             delete self.interactiveUser;
             delete self._unattended;
             callback(err, result);
         });
     }
     catch(e) {
-        self.user = util._extend({ }, interactiveUser);
+        //restore user
+        if (interactiveUser) {
+            self.user = util._extend({ }, interactiveUser);
+        }
         delete self.interactiveUser;
         delete self._unattended;
         callback(e);
