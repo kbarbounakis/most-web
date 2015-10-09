@@ -309,10 +309,11 @@ HttpContext.prototype.unattended = function(fn, callback) {
     if (this.user) {
         interactiveUser.name = this.user.name;
         interactiveUser.authenticationType = this.user.authenticationType;
+        //setting interactive user
+        self.interactiveUser = interactiveUser;
     }
     if (account) {
         self.user = { name:account, authenticationType:'Basic' };
-        self.interactiveUser = interactiveUser;
     }
     try {
         self._unattended = true;
