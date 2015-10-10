@@ -20,7 +20,6 @@ var app = require('./index'),
     xml = require('most-xml'),
     path=require('path'),
     S = require('string');
-    ;
 /**
  * @class ViewHandler
  * @constructor
@@ -50,8 +49,8 @@ Object.inherits = function (ctor, superCtor) {
     }
 }
 ViewHandler.STR_CONTROLLERS_FOLDER = 'controllers';
-ViewHandler.STR_CONTROLLER_FILE = './%s-controller.js'
-ViewHandler.STR_CONTROLLER_RELPATH = '/controllers/%s-controller.js'
+ViewHandler.STR_CONTROLLER_FILE = './%s-controller.js';
+ViewHandler.STR_CONTROLLER_RELPATH = '/controllers/%s-controller.js';
 
 ViewHandler.queryControllerClass = function(controllerName, context, callback) {
 
@@ -81,24 +80,24 @@ ViewHandler.queryControllerClass = function(controllerName, context, callback) {
                                controllerPath = path.join(__dirname, controllerPath);
                                fs.exists(controllerPath, function(exists) {
                                    if (!exists)
-                                       callback(null, './base-controller');
+                                       callback(null, require('./base-controller'));
                                    else
-                                       callback(null, controllerPath);
+                                       callback(null, require(controllerPath));
                                });
                            }
                            else {
-                               callback(null, controllerPath);
+                               callback(null, require(controllerPath));
                            }
                         });
                     }
                     else {
-                        //get base controller path (
-                        callback(null, './base-controller');
+                        var ControllerCtor = context.application.config.controllers[controllerName] || require('./base-controller');
+                        callback(null, ControllerCtor);
                     }
                 }
                 else {
                     //return controller class
-                    callback(null, controllerPath);
+                    callback(null, require(controllerPath));
                 }
             }
             catch (e) {
@@ -179,28 +178,22 @@ ViewHandler.prototype.mapRequest = function (context, callback) {
 
             if (stats && stats.isFile()) {
                 //do nothing
-                callback();
-                return;
+                return callback();
             }
             else {
 
                 try {
                     //query controller
                     var arr = currentRoute.routeData.filter(function(x) { return (x.name==":controller"); });
-                    var controllerName = (arr.length>0) ? arr[0].value : queryController(requestUri),
-                        ControllerClass = null;
+                    var controllerName = (arr.length>0) ? arr[0].value : queryController(requestUri);
                     if (controllerName != null) {
                         //try to find controller class
-                        ViewHandler.queryControllerClass(controllerName, context, function(err, controllerPath) {
+                        ViewHandler.queryControllerClass(controllerName, context, function(err, ControllerClass) {
                             if (err) {
                                 callback(err)
                             }
                             else {
                                 try {
-                                    /**
-                                     * @augments {HttpController}
-                                     */
-                                    ControllerClass = require(controllerPath);
                                     //initialize controller
                                     var controller = new ControllerClass();
                                     //set controller's name

@@ -10,7 +10,8 @@
  */
 var app = require('./index'),
     async = require('async'),
-    util = require('util');
+    util = require('util'),
+    path = require('path');
 /**
  * @class EjsEngine
  * @param {HttpContext=} context
@@ -36,81 +37,78 @@ function EjsEngine(context) {
 
 /**
  *
- * @param {String} path
- * @param {any} options
+ * @param {string} filename
+ * @param {*=} data
+ * @param {Function} callback
  */
-EjsEngine.prototype.render = function(path, data, callback) {
+EjsEngine.prototype.render = function(filename, data, callback) {
     var self = this;
     try {
         var ejs = require('ejs'), fs = require('fs'), common = require('./common');
-        //todo throw exception if file is missing
-        if (fs.existsSync(path))
-        {
-            fs.readFile(path,'utf-8', function(err, str) {
-                try {
-                    if (err) {
-                        callback.call(self, err);
+        fs.readFile(filename,'utf-8', function(err, str) {
+            try {
+                if (err) {
+                    if (err.code === 'ENOENT') {
+                        //throw not found exception
+                        return callback(new common.HttpNotFoundException('View layout cannot be found.'));
                     }
-                    else {
-                        //get view header (if any)
-                        var matcher = /^(\s*)<%#(.*?)%>/;
-                        var properties = { layout:null };
-                        if (matcher.test(str)) {
-                            var matches = matcher.exec(str);
-                            properties = JSON.parse(matches[2]);
-                            //remove match
-                            str = str.replace(matcher,'');
-                        }
-                        //create view context
-                        var viewContext = app.views.createViewContext(self.context);
-                        //extend view context with page properties
-                        util._extend(viewContext, properties || {});
-                        //set view context data
-                        viewContext.data = data;
-                        if (properties.layout) {
-                            var layout = app.current.mapPath(properties.layout);
-                            //set current view buffer (after rendering)
-                            viewContext.body = ejs.render(str, viewContext);
-                            //render master
-                            fs.exists(layout, function(exists) {
-                                if (!exists) {
-                                    callback(new Error('Master layout cannot be found.'));
-                                }
-                                else {
-                                    //render master layout
-                                    fs.readFile(layout,'utf-8', function(err, layoutData) {
-                                        try {
-                                            if (err) {
-                                                callback(err);
-                                            }
-                                            else {
-                                                var result = ejs.render(layoutData, viewContext);
-                                                callback(null, result);
-                                            }
-                                        }
-                                        catch (e) {
-                                            callback(e);
-                                        }
-                                    });
-                                }
-                            });
+                    return callback(err);
+                }
+                else {
+                    //get view header (if any)
+                    var matcher = /^(\s*)<%#(.*?)%>/;
+                    var properties = { layout:null };
+                    if (matcher.test(str)) {
+                        var matches = matcher.exec(str);
+                        properties = JSON.parse(matches[2]);
+                        //remove match
+                        str = str.replace(matcher,'');
+                    }
+                    //create view context
+                    var viewContext = app.views.createViewContext(self.context);
+                    //extend view context with page properties
+                    util._extend(viewContext, properties || {});
+                    //set view context data
+                    viewContext.data = data;
+                    if (properties.layout) {
+                        var layout;
+                        if (/^\//.test(properties.layout)) {
+                            //relative to application folder e.g. /views/shared/master.html.ejs
+                            layout = app.current.mapPath(properties.layout);
                         }
                         else {
-                            var result = ejs.render(str, viewContext);
-                            callback(null, result);
+                            //relative to view file path e.g. ./../master.html.html.ejs
+                            layout = path.resolve(filename, properties.layout);
                         }
+                        //set current view buffer (after rendering)
+                        viewContext.body = ejs.render(str, viewContext);
+                        //render master layout
+                        fs.readFile(layout,'utf-8', function(err, layoutData) {
+                            try {
+                                if (err) {
+                                    if (err.code === 'ENOENT') {
+                                        return callback(new common.HttpNotFoundException('Master view layout cannot be found'));
+                                    }
+                                    return callback(err);
+                                }
+                                var result = ejs.render(layoutData, viewContext);
+                                callback(null, result);
+                            }
+                            catch (e) {
+                                callback(e);
+                            }
+                        });
+                    }
+                    else {
+                        var result = ejs.render(str, viewContext);
+                        callback(null, result);
                     }
                 }
-                catch (e) {
-                    callback(e);
-                }
-            });
-
-
-        }
-        else {
-            throw new common.HttpNotFoundException();
-        }
+            }
+            catch (e) {
+                callback(e);
+            }
+        });
 
     }
     catch (e) {

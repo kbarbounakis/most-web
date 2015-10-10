@@ -1307,13 +1307,44 @@ HttpApplication.prototype.start = function (options) {
 };
 /**
  * @param {string} name
- * @param {function=} ctor
+ * @param {function=} ctor - The class constructor associated with this controller
  * @returns {HttpApplication|function()}
  */
 HttpApplication.prototype.service = function(name, ctor) {
     if (typeof ctor === 'undefined')
         return this.module.service(name);
     this.module.service(name, ctor);
+    return this;
+};
+/**
+ * Get or sets an HTTP controller
+ * @param {string} name
+ * @param {Function|*} ctor
+ * @returns {*}
+ */
+HttpApplication.prototype.controller = function(name, ctor) {
+    this.config.controllers = this.config.controllers || {};
+    var er;
+    if (typeof ctor === 'undefined') {
+        var c = this.config.controllers[name];
+        if (typeof c === 'string') {
+            return require(c);
+        }
+        else if (typeof c === 'function') {
+            return c;
+        }
+        else {
+            er =  new Error('Invalid HTTP Controller constructor. Expected string or function.'); er.code='EARG';
+            throw er;
+        }
+    }
+    //if ctor is not a function (constructor) throw invalid argument exception
+    if (typeof ctor !== 'function') {
+        er =  new Error('Invalid HTTP Controller constructor. Expected function.'); er.code='EARG';
+        throw er;
+    }
+    //append controller to application constroller (or override an already existing controller)
+    this.config.controllers[name] = ctor;
     return this;
 };
 

@@ -326,6 +326,31 @@ HttpFileResult.prototype.execute = function(context, callback)
 
 };
 
+function queryDefaultViewPath(controller, view, extension, callback) {
+   return queryAbsoluteViewPath(this.application.mapPath('/views'), controller, view, extension, callback);
+}
+
+function querySharedViewPath(view, extension, callback) {
+    return queryAbsoluteViewPath(this.application.mapPath('/views'), 'shared', view, extension, callback);
+}
+
+function queryAbsoluteViewPath(search, controller, view, extension, callback) {
+    var result = path.resolve(search, util.format('%s/%s.html.%s', controller, view, extension));
+    fs.exists(result, function(exists) {
+        if (exists)
+            return callback(null, result);
+        //search for capitalized controller name e.g. person as Person
+        var capitalizedController = controller.charAt(0).toUpperCase() + controller.substring(1);
+        return queryAbsoluteViewPath(search, capitalizedController, view, extension, callback);
+    });
+}
+
+function isAbsolute(p) {
+    //var re = new RegExp('^' + p, 'i');
+    //return re.test(path.resolve(process.cwd(), p));
+    return path.normalize(p + '/') === path.normalize(path.resolve(p) + '/');
+}
+
 /**
  * Represents a class that is used to render a view.
  * @class HttpViewResult
@@ -365,12 +390,10 @@ HttpViewResult.prototype.execute = function(context, callback)
     if (!this.name)
         //get action name
         this.name = context.data['action'];
-    //validate [path] route param in order to load a view that is located in a views' sub-directory
+    //validate [path] route param in order to load a view that is located in a views' sub-directory (or in another absolute path)
+    var routePath;
     if (context.request.route) {
-        var routePath =  context.request.route.path || context.request.route.data("path");
-        if (routePath) {
-            this.name = path.join(routePath, this.name);
-        }
+        routePath =  context.request.route.path || context.request.route.data("path");
     }
     //get view name
     var viewName = this.name;
@@ -380,38 +403,51 @@ HttpViewResult.prototype.execute = function(context, callback)
     /**
      * {HttpViewEngineReference|*}
      */
-    var viewPath, viewEngine;
+    var viewPath, viewEngine,
+        //application default view path
+        applicationViewPath = app.current.mapPath('/views');
     async.eachSeries(app.current.config.engines, function(engine, cb) {
         if (viewPath) { cb(); return; }
-        //resolve controller view path
-        var p = app.current.mapPath(util.format('/views/%s/%s.html.%s',controllerName,viewName, engine.extension));
-        fs.exists(p, function(exists) {
-            if (exists) {
-                viewPath = p;
-                viewEngine = engine;
-                cb();
+        if (routePath && isAbsolute(routePath)) {
+            queryAbsoluteViewPath.call(context, routePath, controllerName, viewName, engine.extension, function(err, result) {
+                if (err) { return cb(err); }
+                if (result) {
+                    viewPath = result;
+                    viewEngine = engine;
+                    return cb();
+                }
+                else {
+                    return cb();
+                }
+            });
+        }
+        else {
+            var searchViewName = viewName;
+            if (routePath) {
+                searchViewName = path.join(routePath, viewName);
             }
-            else {
-                //capitalize first letter of controller
-                var capitalizedControllerName = controllerName.charAt(0).toUpperCase() + controllerName.substring(1);
-                p = app.current.mapPath(util.format('/views/%s/%s.html.%s',capitalizedControllerName,viewName, engine.extension));
-                fs.exists(p, function(exists) {
-                    if (exists) {
-                        viewPath = p;
-                        viewEngine = engine;
+            //search by relative path
+            queryDefaultViewPath.call(context, controllerName, searchViewName, engine.extension, function(err, result) {
+                if (err) { return cb(err); }
+                if (result) {
+                    viewPath = result;
+                    viewEngine = engine;
+                    return cb();
+                }
+                else {
+                    querySharedViewPath.call(context, searchViewName, engine.extension, function(err, result) {
+                        if (err) { return cb(err); }
+                        if (result) {
+                            viewPath = result;
+                            viewEngine = engine;
+                            return cb();
+                        }
                         cb();
-                    }
-                    else {
-                        //resolve shared view path
-                        p = app.current.mapPath(util.format('/views/shared/%s.html.%s',viewName, engine.extension));
-                        fs.exists(p, function(exists) {
-                            if (exists) { viewPath = p; viewEngine = engine; }
-                            cb();
-                        });
-                    }
-                });
-            }
-        });
+                    });
+                }
+            });
+        }
+
     }, function(err) {
         if (err) { callback(err); return; }
         if (viewEngine) {
