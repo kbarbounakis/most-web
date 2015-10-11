@@ -397,15 +397,19 @@ HttpViewResult.prototype.execute = function(context, callback)
     }
     //get view name
     var viewName = this.name;
+    if (/^partial/.test(viewName)) {
+        //partial view
+        viewName = viewName.substr(7).replace(/^-/,'');
+        context.request.route.partial = true;
+    }
+
     //and of course controller's name
     var controllerName = context.data['controller'];
     //enumerate existing view engines e.g /views/controller/index.[html].ejs or /views/controller/index.[html].xform etc.
     /**
      * {HttpViewEngineReference|*}
      */
-    var viewPath, viewEngine,
-        //application default view path
-        applicationViewPath = app.current.mapPath('/views');
+    var viewPath, viewEngine;
     async.eachSeries(app.current.config.engines, function(engine, cb) {
         if (viewPath) { cb(); return; }
         if (routePath && isAbsolute(routePath)) {

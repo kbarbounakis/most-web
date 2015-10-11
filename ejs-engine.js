@@ -70,7 +70,10 @@ EjsEngine.prototype.render = function(filename, data, callback) {
                     util._extend(viewContext, properties || {});
                     //set view context data
                     viewContext.data = data;
-                    if (properties.layout) {
+                    var partial = false;
+                    if (self.context && self.context.request.route)
+                        partial = common.parseBoolean(self.context.request.route['partial']);
+                    if (properties.layout && !partial) {
                         var layout;
                         if (/^\//.test(properties.layout)) {
                             //relative to application folder e.g. /views/shared/master.html.ejs
