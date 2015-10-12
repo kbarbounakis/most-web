@@ -327,21 +327,27 @@ HttpFileResult.prototype.execute = function(context, callback)
 };
 
 function queryDefaultViewPath(controller, view, extension, callback) {
-   return queryAbsoluteViewPath(this.application.mapPath('/views'), controller, view, extension, callback);
+   return queryAbsoluteViewPath.call(this, this.application.mapPath('/views'), controller, view, extension, callback);
 }
 
 function querySharedViewPath(view, extension, callback) {
-    return queryAbsoluteViewPath(this.application.mapPath('/views'), 'shared', view, extension, callback);
+    return queryAbsoluteViewPath.call(this, this.application.mapPath('/views'), 'shared', view, extension, callback);
 }
 
 function queryAbsoluteViewPath(search, controller, view, extension, callback) {
-    var result = path.resolve(search, util.format('%s/%s.html.%s', controller, view, extension));
+    var self = this,
+        result = path.resolve(search, util.format('%s/%s.html.%s', controller, view, extension));
     fs.exists(result, function(exists) {
         if (exists)
             return callback(null, result);
         //search for capitalized controller name e.g. person as Person
         var capitalizedController = controller.charAt(0).toUpperCase() + controller.substring(1);
-        return queryAbsoluteViewPath(search, capitalizedController, view, extension, callback);
+        result = path.resolve(search, util.format('%s/%s.html.%s', capitalizedController, view, extension));
+        fs.exists(result, function(exists) {
+            if (exists)
+                return callback(null, result);
+            callback();
+        });
     });
 }
 
