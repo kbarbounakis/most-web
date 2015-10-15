@@ -59,9 +59,15 @@ BasicAuthHandler.prototype.authenticateRequest = function (context, callback) {
         if (typeof authorizationArgs !== 'undefined') {
             //ensure settings
             web.current.config.settings.auth = web.current.config.settings.auth || { };
-            web.current.config.settings.auth.provider = web.current.config.settings.auth.provider || './auth-service';
+            var providerPath = web.current.config.settings.auth.provider || './auth-service';
             //get auth provider
-            var svc = require(web.current.config.settings.auth.provider);
+            var svc;
+            if (/^\//.test(providerPath)) {
+                svc = require(context.application.mapPath(providerPath));
+            }
+            else {
+                svc = require(providerPath);
+            }
             if (typeof svc.createInstance === 'function') {
                 //create provider instance
                 var provider = svc.createInstance(context);
