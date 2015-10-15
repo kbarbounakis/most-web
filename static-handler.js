@@ -124,8 +124,7 @@ StaticHandler.prototype.unmodifiedRequest = function(context, executionPath, cal
                                 var md5 = crypto.createHash('md5');
                                 md5.update(stats.mtime.toString());
                                 var responseETag = md5.digest('base64');
-                                callback(null, (requestETag==responseETag));
-                                return;
+                                return callback(null, (requestETag==responseETag));
                             }
                         }
                     });
@@ -161,7 +160,7 @@ StaticHandler.prototype.processRequest = function(context, callback)
             return;
         }
         if (!stats.isFile()) {
-            callback(new app.common.HttpNotFoundException());
+            return callback(new app.common.HttpNotFoundException());
         }
         else {
             //get if-none-match header
@@ -175,8 +174,7 @@ StaticHandler.prototype.processRequest = function(context, callback)
                     //context.response.writeHead(304, { 'Last-Modified':stats.mtime.toUTCString() });
                     context.response.writeHead(304, { });
                     context.response.end();
-                    callback.call(context);
-                    return;
+                    return callback.call(context);
                 }
             //get file extension
             var extensionName  = path.extname(context.request.currentExecutionPath);
@@ -191,33 +189,27 @@ StaticHandler.prototype.processRequest = function(context, callback)
                 if (mime.encoding)
                     contentEncoding = mime.encoding;
             }
-
             //throw exception (MIME not found or access denied)
             if (contentType==null) {
                 callback(new app.common.HttpForbiddenException())
             }
             else {
-                //finally process request
-                fs.readFile(context.request.currentExecutionPath,'binary',function(err, data) {
-                    if (err) {
-                        callback(e);
-                    }
-                    else {
-                        context.response.writeHead(200, {'Content-Type': contentType + (contentEncoding ? ';charset=' + contentEncoding : ''), 'ETag' : responseETag});
-                        context.response.write(data, "binary");
-                        callback(null);
-                    }
+                //create stream
+                var source = fs.createReadStream(context.request.currentExecutionPath);
+                //write headers
+                context.response.writeHead(200, {'Content-Type': contentType + (contentEncoding ? ';charset=' + contentEncoding : ''), 'ETag' : responseETag});
+                //response file
+                source.pipe(context.response);
+                //handle end
+                source.on('end', function() {
+                    callback();
+                });
+                //handle error
+                source.on('error', function(err) {
+                    callback(err);
                 });
             }
         }
-            //fs.stat(context.request.currentExecutionPath, function(err, stats) {
-            //    if (err) {
-            //        callback(err);
-            //    }
-            //    else {
-            //
-            //    }
-            //});
         }
         catch (e) {
         callback.call(context, e);
