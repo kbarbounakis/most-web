@@ -534,7 +534,7 @@ HttpContext.prototype.isPost = function () {
 };
 /**
  * @param {String|Array} method
- * @param {Function()} fn
+ * @param {Function} fn
  * @returns {HttpContext}
  */
 HttpContext.prototype.handle = function(method, fn) {

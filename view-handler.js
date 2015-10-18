@@ -107,15 +107,15 @@ ViewHandler.queryControllerClass = function(controllerName, context, callback) {
     }
 };
 
-ViewHandler.prototype.beginRequest = function (context, callback) {
-    //angularjs compatibility headers
-    if (context.response) {
-        context.response.setHeader("Access-Control-Allow-Origin", "*");
-        context.response.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-        context.response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    }
-    callback();
-};
+//ViewHandler.prototype.beginRequest = function (context, callback) {
+//    //angularjs compatibility headers
+//    if (context.response) {
+//        context.response.setHeader("Access-Control-Allow-Origin", "*");
+//        context.response.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+//        context.response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+//    }
+//    callback();
+//};
 
 ViewHandler.RestrictedLocations = [
     { "path":"^/controllers/", "description":"Most web framework server controllers" },
@@ -236,66 +236,87 @@ ViewHandler.prototype.mapRequest = function (context, callback) {
 
 };
 /**
-  * @param {HttpContext} context
- * @param {Function(Error=)} callback
+ * @param {HttpContext} context
+ * @param {Function} callback
  */
 ViewHandler.prototype.postMapRequest = function (context, callback) {
     try {
-        var model = null;
+        var model, obj;
         if (context.params)
             if (context.params.controller)
-                model = context.model(context.params.controller)
-        if (context.isPost()) {
-            if (context.format=='xml') {
-                //get current model
-                if (context.request.body) {
-                    //load xml
-                    try {
-                        var doc = xml.loadXML(context.request.body);
-                        //todo::validate current model
-                        var obj = xml.deserialize(doc.documentElement);
-                        context.params.data = obj;
-                        callback();
-                    }
-                    catch (e) {
-                        callback(e);
-                    }
-                    return;
-                }
-            }
-            else if (context.format=='json') {
-                if (typeof context.request.body === 'string') {
-                    //parse json data
-                    try {
-                        var obj = JSON.parse(context.request.body)
-                        //set context data
-                        context.params.data = obj;
-                    }
-                    catch(e) {
-                        //otherwise raise error
-                        app.common.log(e);
-                        callback(new Error('Invalid JSON data.'));
-                        return;
+                model = context.model(context.params.controller);
+        ViewHandler.prototype.preflightRequest.call(this, context, function(err) {
+            if (err) { return callback(err); }
+            if (context.is('POST')) {
+                if (context.format=='xml') {
+                    //get current model
+                    if (context.request.body) {
+                        //load xml
+                        try {
+                            var doc = xml.loadXML(context.request.body);
+                            obj = xml.deserialize(doc.documentElement);
+                            context.params.data = obj;
+                        }
+                        catch (e) {
+                            return callback(e);
+                        }
                     }
                 }
+                else if (context.format=='json') {
+                    if (typeof context.request.body === 'string') {
+                        //parse json data
+                        try {
+                            obj = JSON.parse(context.request.body);
+                            //set context data
+                            context.params.data = obj;
+                        }
+                        catch(e) {
+                            //otherwise raise error
+                            app.common.log(e);
+                            return callback(new Error('Invalid JSON data.'));
+                        }
+                    }
+                }
             }
-        }
-        callback();
+            return callback();
+        });
     }
     catch(e) {
-
+        callback(e);
     }
 };
+ViewHandler.prototype.preflightRequest = function (context, callback) {
+    try {
+        if (context && (context.request.currentHandler instanceof ViewHandler)) {
+            context.response.setHeader("Access-Control-Allow-Origin", "*");
+            context.response.setHeader("Access-Control-Allow-Credentials", "true");
+            context.response.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Content-Language, Accept, Accept-Language, Authorization");
+            if (context.request.route && context.request.route.allow) {
+                context.response.setHeader('Access-Control-Allow-Methods', context.request.route.allow);
+            }
+            else {
+                context.response.setHeader('Access-Control-Allow-Methods', "GET, OPTIONS, PUT, POST, DELETE");
+            }
+        }
+        return callback();
+    }
+    catch(e) {
+        callback(e);
+    }
 
+};
 /**
  * @param {HttpContext} context
+ * @param {Function} callback
  */
 ViewHandler.prototype.processRequest = function (context, callback) {
     var self = this;
-    callback = callback || function () {
-    };
+    callback = callback || function () { };
     try {
-        //todo:execute controller
+        if (context.is('OPTIONS')) {
+            //do nothing
+            return callback();
+        }
         var common = require('./common'), app = require('./index');
         //validate request controller
         var controller = self.controller;
@@ -306,17 +327,13 @@ ViewHandler.prototype.processRequest = function (context, callback) {
              */
             var action = context.data['action'];
             if (action) {
-                //todo::throw exception (forbidden) for partial views (action name starts with _)
-                /*if (action.indexOf('_')==0) {
-                    throw new app.common.HttpForbiddenException();
-                }*/
                 //execute action
                 var fn = controller[action];
                 if (typeof fn !== 'function') {
                     fn = controller.action;
                 }
                 if (typeof fn !== 'function') {
-                    throw new app.common.HttpNotFoundException();
+                    return callback(new app.common.HttpNotFoundException());
                 }
                 //enumerate params
                 var params = common.getFunctionParams(fn);
@@ -344,7 +361,7 @@ ViewHandler.prototype.processRequest = function (context, callback) {
     catch (e) {
         callback.call(context, e);
     }
-}
+};
 
 /**
  *

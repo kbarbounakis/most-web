@@ -88,13 +88,6 @@ StaticHandler.prototype.mapPath = function(p) {
 };
 
 /*
-StaticHandler.prototype.postMapRequestHandler = function(context)
-{
-    //
-};
-*/
-
-/*
 StaticHandler.prototype.preRequestHandlerExecute = function(context)
 {
     //
@@ -143,7 +136,27 @@ StaticHandler.prototype.unmodifiedRequest = function(context, executionPath, cal
         console.log(e);
         callback(null, false);
     }
-}
+};
+
+StaticHandler.prototype.preflightRequest = function(context, callback) {
+    try {
+        if (context && (context.request.currentHandler instanceof StaticHandler)) {
+            context.response.setHeader("Access-Control-Allow-Origin", "*");
+            context.response.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Content-Language, Accept, Accept-Language, Authorization");
+            context.response.setHeader("Access-Control-Allow-Credentials", "true");
+            context.response.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+        }
+        return callback();
+    }
+    catch(e) {
+        callback(e);
+    }
+
+};
+
+StaticHandler.prototype.postMapRequest = function(context, callback) {
+    return StaticHandler.prototype.preflightRequest.call(this, context, callback);
+};
 
 /**
  * @param {HttpContext} context
@@ -152,7 +165,10 @@ StaticHandler.prototype.processRequest = function(context, callback)
 {
     callback = callback || function() {};
     try {
-
+        if (context.is('OPTIONS')) {
+            //do nothing
+            return callback();
+        }
             //get current execution path and validate once again file presence and MIME type
         var stats = context.request.currentExecutionFileStats;
         if (typeof stats === 'undefined' || stats == null) {
