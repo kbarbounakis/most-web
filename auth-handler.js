@@ -8,7 +8,7 @@
  * Released under the BSD3-Clause license
  * Date: 2014-09-06
  */
-var app = require('./index');
+var web = require('./index');
 /**
  * @class AuthHandler
  * @constructor
@@ -41,14 +41,14 @@ AuthHandler.prototype.authenticateRequest = function (context, callback) {
     try {
         callback = callback || function() {};
         var cookies = {}, model = context.model('User');
-        var settings = app.current.config.settings ? (app.current.config.settings.auth || { }) : { } ;
+        var settings = web.current.config.settings ? (web.current.config.settings.auth || { }) : { } ;
         settings.name = settings.name || '.MAUTH';
         if (context && context.request)
             cookies = AuthHandler.parseCookies(context.request);
         if (cookies[settings.name]) {
             var str = null;
             try {
-                str = app.current.decrypt(cookies[settings.name]);
+                str = web.current.decrypt(cookies[settings.name]);
             }
             catch (e) {
                 //log error (on bad cookie)
@@ -109,27 +109,38 @@ AuthHandler.prototype.preExecuteResult = function (args, callback) {
             return;
         }
         var authenticationType = context.user.authenticationType;
-        model.where('name').equal(context.user.name).expand('groups').silent().first(function(err, result) {
-           if (err) { callback(err); return; }
+        model.where('name').equal(context.user.name).silent().first(function(err, result) {
+           if (err) { return callback(err); }
             if (result) {
                 //replace context.user with data object
                 context.user = model.convert(result);
-                context.user.authenticationType = authenticationType;
-                callback();
+                context.user.property('groups').silent().all(function(err, result) {
+                    if (err) { return callback(err); }
+                    context.user.groups = result;
+                    context.user.authenticationType = authenticationType;
+                    return callback();
+                });
             }
             else if (context.user.name!=='anonymous') {
-                model.where('name').equal('anonymous').expand('groups').silent().first(function(err, result) {
-                    if (err) { callback(err); return; }
+                model.where('name').equal('anonymous').silent().first(function(err, result) {
+                    if (err) { return callback(err); }
                     if (result) {
                         context.user = model.convert(result);
-                        context.user.authenticationType = authenticationType;
+                        context.user.property('groups').silent().all(function(err, result) {
+                            if (err) { return callback(err); }
+                            context.user.groups = result;
+                            context.user.authenticationType = authenticationType;
+                            return callback();
+                        });
                     }
-                    callback();
+                    else {
+                        return callback();
+                    }
                 });
             }
             else {
                 //do nothing
-                callback();
+                return callback();
             }
         });
     }
