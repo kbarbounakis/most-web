@@ -109,29 +109,21 @@ AuthHandler.prototype.preExecuteResult = function (args, callback) {
             return;
         }
         var authenticationType = context.user.authenticationType;
-        model.where('name').equal(context.user.name).silent().first(function(err, result) {
+        model.where('name').equal(context.user.name).expand('groups').silent().first(function(err, result) {
            if (err) { return callback(err); }
             if (result) {
                 //replace context.user with data object
                 context.user = model.convert(result);
-                context.user.property('groups').silent().all(function(err, result) {
-                    if (err) { return callback(err); }
-                    context.user.groups = result;
-                    context.user.authenticationType = authenticationType;
-                    return callback();
-                });
+                context.user.authenticationType = authenticationType;
+                return callback();
             }
             else if (context.user.name!=='anonymous') {
-                model.where('name').equal('anonymous').silent().first(function(err, result) {
+                model.where('name').equal('anonymous').expand('groups').silent().first(function(err, result) {
                     if (err) { return callback(err); }
                     if (result) {
                         context.user = model.convert(result);
-                        context.user.property('groups').silent().all(function(err, result) {
-                            if (err) { return callback(err); }
-                            context.user.groups = result;
-                            context.user.authenticationType = authenticationType;
-                            return callback();
-                        });
+                        context.user.authenticationType = authenticationType;
+                        return callback();
                     }
                     else {
                         return callback();
