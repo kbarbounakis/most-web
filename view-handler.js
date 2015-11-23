@@ -330,7 +330,9 @@ ViewHandler.prototype.processRequest = function (context, callback) {
                 //execute action
                 var fn = controller[action];
                 if (typeof fn !== 'function') {
-                    fn = controller.action;
+                    fn = controller[S(action).camelize().toString()];
+                    if (typeof fn !== 'function')
+                        fn = controller.action;
                 }
                 if (typeof fn !== 'function') {
                     return callback(new app.common.HttpNotFoundException());

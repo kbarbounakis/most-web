@@ -655,6 +655,22 @@ var common = {
             md5.update(JSON.stringify(value));
         }
         return md5.digest('hex');
+    },
+    sha1 : function(value) {
+        if (typeof value === 'undefined' || value == null) {
+            return;
+        }
+        var sha1 = crypto.createHash('sha1');
+        if (typeof value === 'string') {
+            sha1.update(value);
+        }
+        else if (value instanceof Date) {
+            sha1.update(value.toUTCString());
+        }
+        else {
+            sha1.update(JSON.stringify(value));
+        }
+        return sha1.digest('hex');
     }
 };
 

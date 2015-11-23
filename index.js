@@ -823,7 +823,8 @@ HttpApplication.prototype.createContext = function (request, response) {
     return context;
 };
 /**
- * @param {*} options The request options
+ * @param {*} options
+ * @param {*} data
  * @param {Function} callback
  */
 HttpApplication.prototype.executeExternalRequest = function(options,data, callback) {
@@ -869,8 +870,8 @@ HttpApplication.prototype.executeExternalRequest = function(options,data, callba
  * @param {function(HttpContext)} fn
  */
 HttpApplication.prototype.execute = function (fn) {
-    var request = this.__createRequest();
-    fn.call(this, this.createContext(request, this.__createResponse(request)));
+    var request = createRequestInternal.call(this);
+    fn.call(this, this.createContext(request, createResponseInternal.call(this,request)));
 };
 
 /**
@@ -879,7 +880,7 @@ HttpApplication.prototype.execute = function (fn) {
  */
 HttpApplication.prototype.unattended = function (fn) {
     //create context
-    var request = this.__createRequest(), context =  this.createContext(request, this.__createResponse(request));
+    var request = createRequestInternal.call(this), context =  this.createContext(request, createResponseInternal.call(this,request));
     //get unattended account
     /**
      * @type {{unattendedExecutionAccount:string}|*}
@@ -936,8 +937,8 @@ HttpApplication.prototype.executeRequest = function (options, callback) {
     else {
         util._extend(opts, options);
     }
-    var request = this.__createRequest(opts),
-        response = this.__createResponse(request);
+    var request = createRequestInternal.call(this,opts),
+        response = createResponseInternal.call(this,request);
     if (!opts.url) {
         callback(new Error('Internal request url cannot be empty at this context.'));
         return;
@@ -983,7 +984,7 @@ HttpApplication.prototype.executeRequest = function (options, callback) {
          </body></html>
         */
         response.setHeader('Content-Length',-1);
-        this.__handleRequest(request, response, function(err) {
+        handleRequestInternal.call(this, request, response, function(err) {
             if (err) {
                 callback(err);
             }
@@ -1031,15 +1032,13 @@ HttpApplication.prototype.executeRequest = function (options, callback) {
     }
 };
 
-
-
 /**
  * @private
  * @param {ClientRequest} request
  * @param {ServerResponse} response
  * @param callback
  */
-HttpApplication.prototype.__handleRequest = function (request, response, callback)
+function handleRequestInternal(request, response, callback)
 {
     var self = this, context = self.createContext(request, response);
     //add query string
@@ -1076,12 +1075,11 @@ HttpApplication.prototype.__handleRequest = function (request, response, callbac
         }
     });
 }
-
 /**
- * Creates a mock-up client request
  * @private
+ * @param {*} options
  */
-HttpApplication.prototype.__createRequest = function (options) {
+function createRequestInternal(options) {
     var opt = options ? options : {};
     var request = new http.IncomingMessage();
     request.method = (opt.method) ? opt.method : 'GET';
@@ -1106,15 +1104,17 @@ HttpApplication.prototype.__createRequest = function (options) {
     request.files = (opt.files) ? opt.files : {};
     return request;
 }
+
 /**
  * Creates a mock-up server response
  * @param {ClientRequest} req
  * @returns {ServerResponse|*}
  * @private
  */
-HttpApplication.prototype.__createResponse = function (req) {
+function createResponseInternal(req) {
     return new http.ServerResponse(req);
-};
+}
+
 /**
  *
  * @param {HttpContext} context
@@ -1245,10 +1245,11 @@ var HTTP_SERVER_DEFAULT_BIND = '127.0.0.1';
 var HTTP_SERVER_DEFAULT_PORT = 3000;
 
 /**
- *
- * @param {*=} options
+ * @private
+ * Starts HTTP application server
+ * @param {{port:number,bind:string,cluster:number|string}|*=} options
  */
-HttpApplication.prototype.start = function (options) {
+function startInternal(options) {
     var self = this;
     try {
         //validate options
@@ -1304,6 +1305,56 @@ HttpApplication.prototype.start = function (options) {
     } catch (e) {
         console.log(e);
     }
+}
+
+/**
+ *
+ * @param {{port:number,bind:string,cluster:number|string}|*=} options
+ */
+HttpApplication.prototype.start = function (options) {
+    if (options.cluster) {
+        var clusters = 1;
+        //check if options.cluster="auto"
+        if (/^auto$/i.test(options.cluster)) {
+            clusters = require('os').cpus().length;
+        }
+        else {
+            //get cluster number
+            clusters = common.parseInt(options.cluster);
+        }
+        if (clusters>1) {
+            var cluster = require('cluster');
+            if (cluster.isMaster) {
+                //get debug argument (if any)
+                var debug = process.execArgv.filter(function(x) { return /^--debug(-brk)?=\d+$/.test(x); })[0], debugPort;
+                if (debug) {
+                    //get debug port
+                    debugPort = parseInt(/^--debug(-brk)?=(\d+)$/.exec(debug)[2]);
+                    cluster.setupMaster({
+                        execArgv: process.execArgv.filter(function(x) { return !/^--debug(-brk)?=\d+$/.test(x); })
+                    });
+                }
+                for (var i = 0; i < clusters; i++) {
+                    if (debug) {
+                        if (/^--debug-brk=/.test(debug))
+                            cluster.settings.execArgv.push('--debug-brk=' + (debugPort + i));
+                        else
+                            cluster.settings.execArgv.push('--debug=' + (debugPort + i));
+                    }
+                    cluster.fork();
+                    if (debug) cluster.settings.execArgv.pop();
+                }
+            } else {
+                startInternal.call(this,options);
+            }
+        }
+        else {
+            startInternal.call(this,options);
+        }
+    }
+    else {
+        startInternal.call(this,options);
+    }
 };
 /**
  * @param {string} name
@@ -1316,6 +1367,17 @@ HttpApplication.prototype.service = function(name, ctor) {
     this.module.service(name, ctor);
     return this;
 };
+
+/**
+ * @param {string} name
+ * @param {function} ctor - The class constructor associated with this controller
+ * @returns {HttpApplication|function()}
+ */
+HttpApplication.prototype.directive = function(name, ctor) {
+    this.module.directive(name, ctor);
+    return this;
+};
+
 /**
  * Get or sets an HTTP controller
  * @param {string} name
@@ -1688,12 +1750,11 @@ var web = {
             util.inherits(ctor, mvc.HttpController);
         },
         /**
-         * @class HttpController
+         * @constructs HttpController
          * */
         HttpController: mvc.HttpController,
         /**
-         * @class HttpViewContext
-         * @constructor
+         * @constructs HttpViewContext
          */
         HttpViewContext:mvc.HttpViewContext
     },

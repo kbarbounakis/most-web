@@ -722,6 +722,7 @@ function HttpViewEngineReference()
  * @class HttpViewContext
  * @param {HttpContext} context
  * @property {DataModel} model
+ * @property {HtmlWriter} html
  * @constructor
  * @augments {EventEmitter}
  */
@@ -778,7 +779,7 @@ function HttpViewContext(context) {
         }, configurable:false, enumerable:false
     });
 
-    this.html = HttpViewContext.HtmlViewHelper(this);
+    this.html = new HtmlViewHelper(this);
     //class extension initiators
     if (typeof this.init === 'function') {
         //call init() method
@@ -876,6 +877,59 @@ HttpViewContext.HtmlViewHelper = function($view)
 };
 }
 
+/**
+ * @class
+ * @param {HttpViewContext} view
+ * @constructor
+ * @property {HttpViewContext} parent - The parent HTTP View Context
+ * @property {HTMLDocument|*} document - The in-process HTML Document
+ */
+function HtmlViewHelper(view) {
+    var document, self = this;
+    Object.defineProperty(this, 'parent', {
+        get: function() {
+            return view;
+        } , configurable:false, enumerable:false
+    });
+    Object.defineProperty(this, 'document', {
+        get: function() {
+            if (typeof document !== 'undefined') { return document; }
+            document = self.view.context.application.document();
+            return document;
+        } , configurable:false, enumerable:false
+    });
+}
+HtmlViewHelper.prototype.antiforgery = function() {
+    var $view = this.parent;
+    //create token
+    var context = $view.context,  value = context.application.encypt(JSON.stringify({ id: Math.floor(Math.random() * 1000000), url:context.request.url, date:new Date() }));
+    //try to set cookie
+    context.response.setHeader('Set-Cookie','.CSRF='.concat(value));
+    return $view.writer.writeAttribute('type', 'hidden')
+        .writeAttribute('id', '_CSRFToken')
+        .writeAttribute('name', '_CSRFToken')
+        .writeAttribute('value', value)
+        .writeFullBeginTag('input')
+        .toString();
+};
+
+HtmlViewHelper.prototype.element = function(obj) {
+    return this.document.parentWindow.angular.element(obj);
+};
+
+HtmlViewHelper.prototype.lang = function() {
+    var $view = this.view;
+    var context = $view.context, c= context.culture();
+    if (typeof c === 'string') {
+        if (c.length>=2) {
+            return c.toLowerCase().substring(0,2);
+        }
+    }
+    //in all cases return default culture
+    return 'en';
+};
+
+
 var mvc = {
     /**
      * @constructs HttpResult
@@ -913,6 +967,10 @@ var mvc = {
      * @constructs HttpViewContext
      * */
     HttpViewContext:HttpViewContext,
+    /**
+     * @constructs HtmlViewHelper
+     * */
+    HtmlViewHelper:HtmlViewHelper,
     /**
      * @constructs HttpController
      * */

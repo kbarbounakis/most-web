@@ -580,6 +580,42 @@ HttpDataController.prototype.index = function(callback)
                     callback(e);
                 }
             });
+        }).handle(['POST', 'PUT'], function() {
+            //get context param
+            var target = self.model.convert(context.params[self.model.name] || context.params.data, true);
+            if (target) {
+                self.model.save(target, function(err)
+                {
+                    if (err) {
+                        console.log(err);
+                        console.log(err.stack);
+                        callback(common.httpError(err));
+                    }
+                    else {
+                        callback(null, self.result(target));
+                    }
+                });
+            }
+            else {
+                callback(new common.HttpBadRequest());
+            }
+        }).handle('DELETE', function() {
+            //get context param
+            var target = context.params[self.model.name] || context.params.data;
+            if (target) {
+                self.model.remove(target, function(err)
+                {
+                    if (err) {
+                        callback(common.httpError(err));
+                    }
+                    else {
+                        callback(null, self.result(target));
+                    }
+                });
+            }
+            else {
+                callback(new common.HttpBadRequest());
+            }
         }).unhandle(function() {
             callback(new common.HttpMethodNotAllowed());
         });
