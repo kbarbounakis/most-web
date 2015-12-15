@@ -8,6 +8,9 @@
  * Released under the BSD3-Clause license
  * Date: 2015-05-26
  */
+/**
+ * @private
+ */
 var web = require('most-web');
 /**
  * Extends context parameters by adding the default context params that are defined on the current route, if any

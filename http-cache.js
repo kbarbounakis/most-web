@@ -8,6 +8,9 @@
  * Released under the BSD3-Clause license
  * Date: 2014-03-10
  */
+/**
+ * @ignore
+ */
 var dat = require('most-data'), util = require('util');
 /**
  * Implements the cache for a data application.

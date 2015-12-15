@@ -8,6 +8,9 @@
  * Released under the BSD3-Clause license
  * Date: 2014-12-02
  */
+/**
+ * @ignore
+ */
 var formidable = require('formidable'), util = require('util');
 function MultipartHandler() {
 

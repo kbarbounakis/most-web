@@ -8,31 +8,30 @@
  * Released under the BSD3-Clause license
  * Date: 2015-01-05
  */
+/**
+ * @private
+ */
 var util = require('util'),
     path=require('path'),
     fs = require('fs'),
-    Db = require('tingodb')().Db,
     common = require('./common');
 /**
- * @class FileStorage
+ * @classdesc An abstract class that describes a file storage.
+ * @class
  * @constructor
+ * @property {string} root - Gets or sets a string that represents the physical root path of this file storage
+ * @property {string} virtualPath - Gets or sets a string that represents the virtual path of this file storage
+ * @memberOf module:most-web.files
  */
 function FileStorage() {
-    /**
-     * @type {string}
-     */
-    this.root = null;
-    /**
-     * @type {string}
-     */
-    this.virtualPath = null;
+    //
 }
 
 /**
  * @param {HttpContext} context
  * @param {string} src
  * @param {*} attrs
- * @param {function(Error=)} callback
+ * @param {Function} callback
  */
 FileStorage.prototype.copyFrom = function(context, src, attrs, callback) {
     callback  = callback || function() {};
@@ -44,7 +43,7 @@ FileStorage.prototype.copyFrom = function(context, src, attrs, callback) {
  * @param {HttpContext} context
  * @param {*} item
  * @param {string} dest
- * @param {function(Error=,*=)} callback
+ * @param {Function} callback
  */
 FileStorage.prototype.copyTo = function(context, item, dest, callback) {
     callback  = callback || function() {};
@@ -54,7 +53,7 @@ FileStorage.prototype.copyTo = function(context, item, dest, callback) {
 /**
  * @param {HttpContext} context
  * @param {*} item
- * @param {function(Error=,*=)} callback
+ * @param {Function} callback
  */
 FileStorage.prototype.resolvePhysicalPath = function(context, item, callback) {
     callback  = callback || function() {};
@@ -63,26 +62,26 @@ FileStorage.prototype.resolvePhysicalPath = function(context, item, callback) {
 /**
  * @param {HttpContext} context
  * @param {*} item
- * @param {function(Error=,*=)} callback
+ * @param {Function} callback
  */
 FileStorage.prototype.resolveUrl = function(context, item, callback) {
     callback  = callback || function() {};
     callback();
-}
+};
 
 /**
  * @param {HttpContext} context
  * @param {*} item
- * @param {function(Error|common.FileNotFoundException=,ReadStream=)} callback
+ * @param {Function} callback
  */
 FileStorage.prototype.createReadStream = function(context, item, callback) {
     callback  = callback || function() {};
     callback();
-}
+};
 
 
 /**
- * @param {function(Error=)} callback
+ * @param {Function} callback
  */
 FileStorage.prototype.init = function(callback) {
     callback  = callback || function() {};
@@ -92,7 +91,7 @@ FileStorage.prototype.init = function(callback) {
 /**
  * @param {HttpContext} context
  * @param {*} query
- * @param {function(Error=,*=)} callback
+ * @param {Function} callback
  */
 FileStorage.prototype.find = function(context, query, callback) {
     callback  = callback || function() {};
@@ -102,7 +101,7 @@ FileStorage.prototype.find = function(context, query, callback) {
 /**
  * @param {HttpContext} context
  * @param {*} query
- * @param {function(Error=,*=)} callback
+ * @param {Function} callback
  */
 FileStorage.prototype.findOne = function(context, query, callback) {
     callback  = callback || function() {};
@@ -122,7 +121,7 @@ FileStorage.prototype.remove = function(context, item, callback) {
 /**
  * @param {HttpContext} context
  * @param {*} item
- * @param {function(Boolean)} callback
+ * @param {Function} callback
  */
 FileStorage.prototype.exists = function(context, item, callback) {
     callback  = callback || function() {};
@@ -131,10 +130,14 @@ FileStorage.prototype.exists = function(context, item, callback) {
 
 
 /**
+ * @classdesc FileSystemStorage class describes a file storage on local file system.
  * @class FileSystemStorage
  * @constructor
  * @augments FileStorage
  * @param {string} physicalPath The root directory of this storage
+ * @memberOf module:most-web.files
+ * @deprecated
+ * @ignore
  */
 function FileSystemStorage(physicalPath) {
     this.root = physicalPath;
@@ -163,8 +166,8 @@ function FileSystemStorage(physicalPath) {
                           callback(new Error('An error occured while trying to initialize file system storage.'));
                       }
                        else {
-                          //create db collection if does not exist
-                          var db = new Db(self.root, {nativeObjectID:true});
+                          var Db = require('tingodb')().Db,
+                              db = new Db(self.root, {nativeObjectID:true});
                           //Fetch a collection to insert document into
                           var collection = db.collection("fs");
                           db.close(function() {
@@ -179,14 +182,11 @@ function FileSystemStorage(physicalPath) {
         }
     };
 
-    /**
-     *
-     * @param {function(Db, function(Error=,*=))} fn
-     */
     this.execute = function(fn, callback) {
         fn = fn || function() {};
         try {
-            var db = new Db(physicalPath, { nativeObjectID:true });
+            var Db = require('tingodb')().Db,
+                db = new Db(physicalPath, { nativeObjectID:true });
             fn(db, function(err, result) {
                 db.close(function() {
                    callback(err, result);
@@ -201,7 +201,6 @@ function FileSystemStorage(physicalPath) {
 }
 util.inherits(FileSystemStorage, FileStorage);
 /**
- *
  * @param {HttpContext} context
  * @param {*} item
  * @param {function} callback
@@ -275,7 +274,7 @@ FileSystemStorage.prototype.findOne = function(context, query, callback) {
 FileSystemStorage.prototype.resolvePhysicalPath = function(context, item, callback) {
     var _id = item._id, self = this, file_id;
     if (_id) {
-        file_id = common.convertToBase26(_id)
+        file_id = common.convertToBase26(_id);
         callback(null, path.join(self.root, file_id.substr(0,1), file_id));
     }
     else {
@@ -325,7 +324,7 @@ FileSystemStorage.prototype.resolveUrl = function(context, item, callback) {
 /**
  * @param {HttpContext} context
  * @param {*} item
- * @param {function(Error|common.FileNotFoundException=,ReadStream=)} callback
+ * @param {Function} callback
  */
 FileSystemStorage.prototype.createReadStream = function(context, item, callback) {
     var self = this, filePath;
@@ -511,10 +510,12 @@ FileSystemStorage.prototype.copyTo = function(context, item, dest, callback) {
 
 
 /**
- * @class AttachmentFileSystemStorage
+ * @classdesc AttachmentFileSystemStorage class describes a file storage for attachments' management on local file system.
+ * @class
  * @constructor
  * @augments FileStorage
  * @param {string} physicalPath The root directory of this storage
+ * @memberOf module:most-web.files
  */
 function AttachmentFileSystemStorage(physicalPath) {
     this.root = physicalPath;
@@ -555,7 +556,6 @@ function AttachmentFileSystemStorage(physicalPath) {
 
 util.inherits(AttachmentFileSystemStorage, FileStorage);
 /**
- *
  * @param {HttpContext} context
  * @param {*} item
  * @param {function} callback
@@ -582,7 +582,7 @@ AttachmentFileSystemStorage.prototype.save = function(context, item, callback) {
             //set oid explicitly
             item.oid = common.randomChars(12);
             //set url
-            item.url = util.format(self.virtualPath, item.oid)
+            item.url = util.format(self.virtualPath, item.oid);
             //save attachment
             attachments.save(item, function(err) {
                 callback(err);
@@ -594,7 +594,7 @@ AttachmentFileSystemStorage.prototype.save = function(context, item, callback) {
 /**
  * @param {HttpContext} context
  * @param {*} query
- * @param {function(Error=,*=)} callback
+ * @param {Function} callback
  */
 AttachmentFileSystemStorage.prototype.findOne = function(context, query, callback) {
     var self = this;
@@ -620,12 +620,12 @@ AttachmentFileSystemStorage.prototype.findOne = function(context, query, callbac
  *
  * @param {HttpContext} context
  * @param {*} item
- * @param {function(Error=,string=)} callback
+ * @param {Function} callback
  */
 AttachmentFileSystemStorage.prototype.resolvePhysicalPath = function(context, item, callback) {
     var id = item.id, self = this, file_id;
     if (id) {
-        file_id = common.convertToBase26(id)
+        file_id = common.convertToBase26(id);
         callback(null, path.join(self.root, file_id.substr(0,1), file_id));
     }
     else {
@@ -652,7 +652,7 @@ AttachmentFileSystemStorage.prototype.resolvePhysicalPath = function(context, it
  * @param {function(Error=,string=)} callback
  */
 AttachmentFileSystemStorage.prototype.resolveUrl = function(context, item, callback) {
-    var oid = item.oid, self = this, file_id;
+    var oid = item.oid, self = this;
     if (oid) {
         callback(null, util.format(self.virtualPath, oid));
     }
@@ -676,7 +676,7 @@ AttachmentFileSystemStorage.prototype.resolveUrl = function(context, item, callb
 /**
  * @param {HttpContext} context
  * @param {*} item
- * @param {function(Error|common.FileNotFoundException=,ReadStream=)} callback
+ * @param {Function} callback
  */
 AttachmentFileSystemStorage.prototype.createReadStream = function(context, item, callback) {
     var self = this, filePath;
@@ -711,7 +711,7 @@ AttachmentFileSystemStorage.prototype.createReadStream = function(context, item,
 /**
  * @param {HttpContext} context
  * @param {*} query
- * @param {function(Boolean)} callback
+ * @param {Function} callback
  */
 AttachmentFileSystemStorage.prototype.exists = function(context, query, callback) {
     callback  = callback || function() {};
@@ -763,7 +763,7 @@ AttachmentFileSystemStorage.prototype.init = function(callback) {
  * @param {HttpContext} context
  * @param {string} src
  * @param {*} attrs
- * @param {function(Error=,*=)} callback
+ * @param {Function} callback
  */
 AttachmentFileSystemStorage.prototype.copyFrom = function(context, src, attrs, callback) {
     var self = this;
@@ -825,7 +825,7 @@ AttachmentFileSystemStorage.prototype.copyFrom = function(context, src, attrs, c
  * @param {HttpContext} context
  * @param {string|*} item
  * @param {string} dest
- * @param {function(Error=,*=)} callback
+ * @param {Function} callback
  */
 AttachmentFileSystemStorage.prototype.copyTo = function(context, item, dest, callback) {
     var self = this;
@@ -867,7 +867,12 @@ AttachmentFileSystemStorage.prototype.copyTo = function(context, item, dest, cal
 
 };
 
-
+/**
+ * @param {string} src
+ * @param {string} dest
+ * @param {Function} callback
+ * @private
+ */
 function copyFile(src, dest, callback) {
     //create read stream
     var source = fs.createReadStream(src);
@@ -883,16 +888,12 @@ function copyFile(src, dest, callback) {
     });
 }
 /**
- * @namespace files
+ * @namespace
+ * @memberOf module:most-web
  */
 var files = {
-    /**
-     * @constructs FileSystemStorage
-     */
+    FileStorage:FileStorage,
     FileSystemStorage:FileSystemStorage,
-    /**
-     * @constructs AttachmentFileSystemStorage
-     */
     AttachmentFileSystemStorage:AttachmentFileSystemStorage,
     /**
      * @param {string} physicalPath
@@ -900,15 +901,10 @@ var files = {
      */
     createFileSystemStorage:function(physicalPath) {
         return new FileSystemStorage(physicalPath);
-    },
-    /**
-     * @constructs FileStorage
-     */
-    FileStorage:FileStorage
+    }
 };
 if (typeof exports !== 'undefined') {
     /**
-     * @module most-web/files
      * @see common
      */
     module.exports = files;

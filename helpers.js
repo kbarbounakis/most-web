@@ -8,13 +8,13 @@
  * Released under the BSD3-Clause license
  * Date: 2014-06-10
  */
+/**
+ * @ignore
+ */
 var fs = require('fs'),
     ejs = require('ejs'),
     util = require('util'),
     app = require('most-web'),
-    /**
-     * @class {HttpViewContext}
-     */
     HttpViewContext = app.views.HttpViewContext;
 /**
  *

@@ -9,6 +9,9 @@
  * Date: 2014-06-10
  */
 'use strict';
+/**
+ * @ignore
+ */
 var common = require('./common'),
     util = require('util'),
     htmlWriter = require('./html'),
@@ -19,8 +22,9 @@ var common = require('./common'),
     crypto = require('crypto'),
     async = require('async');
 /**
- * @class HttpResult
+ * @class
  * @constructor
+ * @memberOf module:most-web.mvc
  */
 function HttpResult() {
     this.contentType = 'text/html';
@@ -62,13 +66,10 @@ HttpResult.prototype.execute = function(context, callback) {
  * @class HttpContentResult
  * @param {string} content
  * @augments HttpResult
+ * @memberOf module:most-web.mvc
  * */
 function HttpContentResult(content) {
 
-    /**
-     * Gets or sets the content.
-     * @type {String}
-     * */
     this.data = content;
     this.contentType = 'text/html';
     this.contentEncoding = 'utf8';
@@ -83,6 +84,7 @@ util.inherits(HttpContentResult,HttpResult);
  * @class HttpEmptyResult
  * @constructor
  * @augments HttpResult
+ * @memberOf module:most-web.mvc
  */
 function HttpEmptyResult() {
     //
@@ -99,7 +101,12 @@ HttpEmptyResult.prototype.execute = function(context, callback)
     callback = callback || function() {};
     callback.call(context);
 };
-
+/**
+ * @param {string} key
+ * @param {*} value
+ * @returns {*}
+ * @private
+ */
 function _json_ignore_null_replacer(key, value) {
     if (value==null)
         return undefined;
@@ -112,6 +119,7 @@ function _json_ignore_null_replacer(key, value) {
  * @param {*} data
  * @constructor
  * @augments HttpResult
+ * @memberOf module:most-web.mvc
  */
 function HttpJsonResult(data)
 {
@@ -135,6 +143,7 @@ util.inherits(HttpJsonResult,HttpResult);
  * @param {*} data
  * @constructor
  * @augments HttpResult
+ * @memberOf module:most-web.mvc
  */
 function HttpJavascriptResult(data)
 {
@@ -151,10 +160,11 @@ util.inherits(HttpJavascriptResult,HttpResult);
 
 /**
  * Represents an action that is used to send XML-formatted content.
- * @class HttpXmlResult
+ * @class
  * @param data
  * @constructor
  * @augments HttpResult
+ * @memberOf module:most-web.mvc
  */
 function HttpXmlResult(data)
 {
@@ -180,6 +190,7 @@ util.inherits(HttpXmlResult,HttpResult);
  * @param {string|*} url
  * @constructor
  * @augments HttpResult
+ * @memberOf module:most-web.mvc
  */
 function HttpRedirectResult(url) {
     this.url = url;
@@ -212,6 +223,7 @@ HttpRedirectResult.prototype.execute = function(context, callback)
  * @param {string=} fileName
  * @constructor
  * @augments HttpResult
+ * @memberOf module:most-web.mvc
  */
 function HttpFileResult(physicalPath, fileName) {
     //
@@ -325,15 +337,36 @@ HttpFileResult.prototype.execute = function(context, callback)
     });
 
 };
-
+/**
+ * @param controller
+ * @param view
+ * @param extension
+ * @param callback
+ * @returns {*}
+ * @private
+ */
 function queryDefaultViewPath(controller, view, extension, callback) {
    return queryAbsoluteViewPath.call(this, this.application.mapPath('/views'), controller, view, extension, callback);
 }
-
+/**
+ * @param view
+ * @param extension
+ * @param callback
+ * @returns {*}
+ * @private
+ */
 function querySharedViewPath(view, extension, callback) {
     return queryAbsoluteViewPath.call(this, this.application.mapPath('/views'), 'shared', view, extension, callback);
 }
 
+/**
+ * @param search
+ * @param controller
+ * @param view
+ * @param extension
+ * @param callback
+ * @private
+ */
 function queryAbsoluteViewPath(search, controller, view, extension, callback) {
     var self = this,
         result = path.resolve(search, util.format('%s/%s.html.%s', controller, view, extension));
@@ -350,7 +383,11 @@ function queryAbsoluteViewPath(search, controller, view, extension, callback) {
         });
     });
 }
-
+/**
+ * @param {string} p
+ * @returns {boolean}
+ * @private
+ */
 function isAbsolute(p) {
     //var re = new RegExp('^' + p, 'i');
     //return re.test(path.resolve(process.cwd(), p));
@@ -359,10 +396,11 @@ function isAbsolute(p) {
 
 /**
  * Represents a class that is used to render a view.
- * @class HttpViewResult
+ * @class
  * @param {string=} name - The name of the view.
  * @param {Array=} data - The data that are going to be used to render the view.
  * @augments HttpResult
+ * @memberOf module:most-web.mvc
  */
 function HttpViewResult(name, data)
 {
@@ -508,28 +546,23 @@ HttpViewResult.prototype.execute = function(context, callback)
 
 
 /**
- * Provides methods that respond to HTTP requests that are made to a web application
- * @class HttpController
+ * @classdesc Provides methods that respond to HTTP requests that are made to a web application
+ * @class
+ * @constructor
  * @param {HttpContext} context - The executing HTTP context.
+ * @property {HttpContext} context - Gets or sets the HTTP context associated with this controller
+ * @property {string} name - Gets or sets the internal name for this controller
+ * @memberOf module:most-web.mvc
  * */
 function HttpController(context) {
-    /**
-     * Gets or sets the HTTP context associated with this controller
-     * @type {HttpContext}
-     * */
     this.context = context;
-    /**
-     * Gets or sets the internal name of this controller
-     * @type {string}
-     */
-    this.name=null;
 }
 
 /**
  * Creates a view result object for the given request.
  * @param {*=} data
- * @returns HttpViewResult
- * */
+ * @returns {module.HttpViewResult}
+ */
 HttpController.prototype.view = function(data)
 {
     return new HttpViewResult(null, data);
@@ -677,6 +710,7 @@ HttpController.prototype.empty = function()
  * @param {HttpContext} context
  * @constructor
  * @augments {EventEmitter}
+ * @memberOf module:most-web.mvc
  */
 function HttpViewEngine(context) {
     //
@@ -695,8 +729,9 @@ HttpViewEngine.prototype.render = function(url, options, callback) {
 
 /**
  * Defines an HTTP view engine in application configuration
- * @class HttpViewEngineReference
+ * @class
  * @constructor
+ * @memberOf module:most-web.mvc
  */
 function HttpViewEngineReference()
 {
@@ -719,12 +754,13 @@ function HttpViewEngineReference()
 
 /**
  * Encapsulates information that is related to rendering a view.
- * @class HttpViewContext
+ * @class
  * @param {HttpContext} context
  * @property {DataModel} model
  * @property {HtmlWriter} html
  * @constructor
  * @augments {EventEmitter}
+ * @memberOf module:most-web.mvc
  */
 function HttpViewContext(context) {
     /**
@@ -834,15 +870,12 @@ HttpViewContext.prototype.$T = function(s, lib) {
 /**
  * @param {HttpViewContext} $view
  * @returns {*}
+ * @private
  */
 HttpViewContext.HtmlViewHelper = function($view)
 {
     var doc;
     return {
-    /**
-     * Gets a cross-site anti-forgery token included in an input hidden tag.
-     * @returns {String}
-     */
     antiforgery: function() {
         //create token
         var context = $view.context,  value = context.application.encypt(JSON.stringify({ id: Math.floor(Math.random() * 1000000), url:context.request.url, date:new Date() }));
@@ -855,25 +888,20 @@ HttpViewContext.HtmlViewHelper = function($view)
             .writeFullBeginTag('input')
             .toString();
     },
-        /**
-         *
-         * @param {*} obj
-         * @returns {jQuery|*}
-         */
     element: function(obj) {
         if (typeof doc === 'undefined') { doc = $view.context.application.document(); }
         return doc.parentWindow.angular.element(obj);
     },
-        lang: function() {
-            var context = $view.context, c= context.culture();
-            if (typeof c === 'string') {
-                if (c.length>=2) {
-                    return c.toLowerCase().substring(0,2);
-                }
+    lang: function() {
+        var context = $view.context, c= context.culture();
+        if (typeof c === 'string') {
+            if (c.length>=2) {
+                return c.toLowerCase().substring(0,2);
             }
-            //in all cases return default culture
-            return 'en';
         }
+        //in all cases return default culture
+        return 'en';
+    }
 };
 }
 
@@ -883,6 +911,7 @@ HttpViewContext.HtmlViewHelper = function($view)
  * @constructor
  * @property {HttpViewContext} parent - The parent HTTP View Context
  * @property {HTMLDocument|*} document - The in-process HTML Document
+ * @memberOf module:most-web.mvc
  */
 function HtmlViewHelper(view) {
     var document, self = this;
@@ -929,61 +958,25 @@ HtmlViewHelper.prototype.lang = function() {
     return 'en';
 };
 
-
+/**
+ * @namespace mvc
+ * @memberOf module:most-web
+ */
 var mvc = {
-    /**
-     * @constructs HttpResult
-     * */
     HttpResult : HttpResult,
-    /**
-     * @constructs HttpContentResult
-     * */
     HttpContentResult : HttpContentResult,
-    /**
-     * @constructs HttpJsonResult
-     * */
     HttpJsonResult:HttpJsonResult,
-    /**
-     * @constructs HttpEmptyResult
-     * */
     HttpEmptyResult:HttpEmptyResult,
-    /**
-     * @constructs HttpXmlResult
-     * */
     HttpXmlResult:HttpXmlResult,
-    /**
-     * @constructs HttpRedirectResult
-     * */
     HttpRedirectResult:HttpRedirectResult,
-    /**
-     * @constructs HttpFileResult
-     * */
     HttpFileResult:HttpFileResult,
-    /**
-     * @constructs HttpViewResult
-     * */
     HttpViewResult:HttpViewResult,
-    /**
-     * @constructs HttpViewContext
-     * */
     HttpViewContext:HttpViewContext,
-    /**
-     * @constructs HtmlViewHelper
-     * */
     HtmlViewHelper:HtmlViewHelper,
-    /**
-     * @constructs HttpController
-     * */
     HttpController:HttpController,
-    /**
-     * @constructs HttpViewEngine
-     * */
     HttpViewEngine: HttpViewEngine,
-    /**
-     * @constructs HttpViewEngineReference
-     * */
     HttpViewEngineReference: HttpViewEngineReference
-}
+};
 
 if (typeof exports !== 'undefined')
 {

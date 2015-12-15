@@ -8,17 +8,21 @@
  * Released under the BSD3-Clause license
  * Date: 2014-06-10
  */
-var HTML_START_CHAR='<';
-var HTML_END_CHAR='>';
-var HTML_FULL_END_STRING = ' />';
-var HTML_SPACE_CHAR = ' ';
-var HTML_ATTR_STRING = '%0="%1"';
-var HTML_START_TAG_STRING = '<%0';
-var HTML_END_TAG_STRING = '</%0>';
 /**
- * @class HtmlWriter
- * Processing HTML and writes data to a buffer that may be used for server response.
+ * @private
+ */
+var HTML_START_CHAR='<',
+    HTML_END_CHAR='>',
+    HTML_FULL_END_STRING = ' />',
+    HTML_SPACE_CHAR = ' ',
+    HTML_ATTR_STRING = '%0="%1"',
+    HTML_START_TAG_STRING = '<%0',
+    HTML_END_TAG_STRING = '</%0>';
+/**
+ * @classdesc HtmlWriter class represents a helper class for rendering HTML content.
+ * @class
  * @constructor
+ * @memberOf module:most-web.html
  */
 function HtmlWriter() {
     /**
@@ -203,21 +207,32 @@ HtmlWriter.prototype.writeTo = function(fn)
         //and clear buffered tags
         this.bufferedTags.splice(0,this.bufferedTags.length);
     }
-}
+};
+/**
+ * @namespace html
+ * @memberOf module:most-web
+ */
+var html_ = {
+    HtmlWriter:HtmlWriter,
+    /**
+     * Creates an HTML writer object.
+     * @returns {HtmlWriter}
+     * @memberOf module:most-web.html
+     */
+    createInstance: function() {
+        return new HtmlWriter();
+    },
+    /**
+     * Creates an HTML writer object.
+     * @returns {HtmlWriter}
+     * @memberOf module:most-web.html
+     */
+    createHtmlWriter: function() {
+        return new HtmlWriter();
+    }
+};
 
 if (typeof exports !== 'undefined')
 {
-    module.exports = {
-        /**
-         * @constructs HtmlWriter
-         */
-        HtmlWriter:HtmlWriter,
-        /**
-         * Creates an HTML writer object.
-         * @returns {HtmlWriter}
-         */
-        createInstance: function() {
-            return new HtmlWriter();
-        }
-    }
+    module.exports = html_;
 }

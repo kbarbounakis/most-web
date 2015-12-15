@@ -8,6 +8,9 @@
  * Released under the BSD3-Clause license
  * Date: 2014-10-01
  */
+/**
+ * @ignore
+ */
 var web = require("./index");
 
 function toBoolean(value) {
@@ -182,6 +185,7 @@ var directives = {
                      * @ngdoc
                      * @name attrs
                      * @property {string} ejsLoc
+                     * @private
                      */
                     if (attrs.title)
                         element.attr('title', $context.translate(attrs.title, attrs.ejsLoc));
@@ -197,6 +201,7 @@ var directives = {
                      * @ngdoc
                      * @name attrs
                      * @property {string} ejsLocHtml
+                     * @private
                      */
                     var text = $context.translate(element.html(), attrs.ejsLocHtml);
                     if (text)
@@ -219,6 +224,7 @@ var directives = {
                                  * @property {string} ejsUserInRole
                                  *
                                  * @type {Array}
+                                 * @private
                                  */
                                 var roles = (attrs.ejsUserInRole || '').split(',');
                                 var inRole = (user.groups.filter(function(x) {

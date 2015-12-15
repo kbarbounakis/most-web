@@ -11,6 +11,9 @@
 /**
  * Routing HTTP Handler
  */
+/**
+ * @ignore
+ */
 var app = require('./index'),
     array = require('most-array'),
     url = require('url'),
@@ -369,6 +372,7 @@ ViewHandler.prototype.processRequest = function (context, callback) {
  *
  * @param {String} requestUrl
  * @returns {HttpRoute}
+ * @private
  */
 function queryRoute(requestUri) {
     try {
@@ -433,6 +437,7 @@ function queryRoute(requestUri) {
 /**
  * Gets the controller of the given url
  * @param requestUrl {Url} - A string that represents the url we want to parse.
+ * @private
  * */
 function queryController(requestUri) {
     try {
@@ -459,6 +464,7 @@ function queryController(requestUri) {
 /**
  * Gets the action of the given url
  * @param requestUrl {Url} - A string that represents the url we want to parse.
+ * @private
  * */
 function queryAction(requestUri) {
     try {

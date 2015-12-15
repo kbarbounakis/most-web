@@ -8,15 +8,19 @@
  * Released under the BSD3-Clause license
  * Date: 2014-06-09
  */
+/**
+ * @ignore
+ */
 var app = require('./index'),
     async = require('async'),
     aejs = require('async-ejs'),
     fs = require('fs'),
     util = require('util');
 /**
- * @param {HttpContext=} context
-  * @constructor
- * @augments {EventEmitter}
+ * @class
+ * @param {HttpContext} context
+ * @constructor
+ * @private
  */
 function AsyncEjsEngine(context) {
     /**
@@ -26,8 +30,9 @@ function AsyncEjsEngine(context) {
 }
 /**
  *
- * @param {String} path
- * @param {any} options
+ * @param {string} path
+ * @param {*} data
+ * @param {Function} callback
  */
 AsyncEjsEngine.prototype.render = function(path, data, callback) {
     var self = this;

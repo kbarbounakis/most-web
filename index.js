@@ -9,7 +9,9 @@
  * Date: 2014-06-10
  */
 'use strict';
-
+/**
+ * @private
+ */
 var common = require('./common'),
     files = require('./files'),
     mvc = require('./http-mvc'),
@@ -18,25 +20,35 @@ var common = require('./common'),
     url = require('url'),
     http = require('http'),
     da = require('most-data'),
-    formidable = require('formidable'),
     querystring = require('querystring'),
-    /**
-     * @constructs HttpBaseController
-     */
-    HttpBaseController= require('./base-controller'),
-    /**
-     * @constructs HttpDataController
-     */
-    HttpDataController= require('./data-controller'),
-    /**
-     * @constructs HttpLookupController
-     */
-    HttpLookupController= require('./lookup-controller'),
-    /**
-     * @constructs HttpContext
-     */
     HttpContext= require('./http-context').HttpContext,
     crypto = require('crypto');
+
+/**
+ * @classdesc ApplicationOptions class describes the startup options of a MOST Web Framework application.
+ * @class
+ * @constructor
+ * @property {number} port - The HTTP binding port number.
+ * The default value is either PORT environment variable or 3000.
+ * @property {string} bind - The HTTP binding ip address or hostname.
+ * The default value is either IP environment variable or 127.0.0.1.
+ * @property {number|string} cluster - A number which represents the number of clustered applications.
+ * The default value is zero (no clustering). If cluster is 'auto' then the number of clustered applications
+ * depends on hardware capabilities (number of CPUs).
+ @example
+ //load module
+ var web = require("most-web");
+ //start server
+ web.current.start({ port:80, bind:"0.0.0.0",cluster:'auto' });
+ @example
+ //Environment variables already set: IP=198.51.100.0 PORT=80
+ var web = require("most-web");
+ web.current.start();
+ */
+function ApplicationOptions() {
+
+}
+
 /**
  * Represents a configuration file that is applicable to an application or service.
  * @constructor
@@ -102,26 +114,26 @@ function HttpDataContext() {
  */
 HttpDataContext.prototype.db = function () {
     return null;
-}
+};
 
 /**
- * @param name {string}
+ * @param {string} name
  * @returns {DataModel}
  */
 HttpDataContext.prototype.model = function (name) {
     return null;
-}
+};
 
 /**
- * @param name {string}
+ * @param {string} type
  * @returns {*}
  */
 HttpDataContext.prototype.dataTypes = function (type) {
     return null;
-}
+};
 
 /**
- * Abstract class that represents an HTTP Handler
+ * @classdesc An abstract class that represents an HTTP Handler
  * @class HttpHandler
  * @abstract
  * @constructor
@@ -130,6 +142,10 @@ function HttpHandler() {
     //
 }
 
+/**
+ * @type {string[]}
+ * @private
+ */
 HttpHandler.Events = ['beginRequest', 'validateRequest', 'authenticateRequest',
     'authorizeRequest', 'mapRequest', 'postMapRequest', 'preExecuteResult', 'postExecuteResult', 'endRequest'];
 
@@ -530,7 +546,7 @@ HttpApplication.prototype.resolveETag = function(file, callback) {
                             md5.update(stats.mtime.toString());
                             var result = md5.digest('base64');
                             callback(null, result);
-                            return;
+
                         }
                     }
                 });
@@ -759,7 +775,7 @@ HttpApplication.prototype.processRequest = function (context, callback) {
             }
         });
     }
-}
+};
 
 /**
  * Gets the default data context based on the current configuration
@@ -796,7 +812,7 @@ HttpApplication.prototype.db = function () {
         }
         throw new Error('The default data adapter cannot be instantiated. The module provided does not export a function called createInstance().')
     }
-}
+};
 
 /**
  * Creates an instance of HttpContext class.
@@ -1021,7 +1037,7 @@ HttpApplication.prototype.executeRequest = function (options, callback) {
                         headers: headers,
                         body:body,
                         encoding:encoding
-                    }
+                    };
                     callback(null, result);
                 }
                 catch (e) {
@@ -1120,6 +1136,7 @@ function createResponseInternal(req) {
  * @param {HttpContext} context
  * @param {Error|*} err
  * @param {function(Error=)} callback
+ * @private
  */
 function onHtmlError(context, err, callback) {
     try {
@@ -1241,13 +1258,20 @@ HttpApplication.prototype.onError = function (context, err, callback) {
         }
     }
 };
+/**
+ * @private
+ * @type {string}
+ */
 var HTTP_SERVER_DEFAULT_BIND = '127.0.0.1';
+/**
+ * @private
+ * @type {number}
+ */
 var HTTP_SERVER_DEFAULT_PORT = 3000;
 
 /**
  * @private
- * Starts HTTP application server
- * @param {{port:number,bind:string,cluster:number|string}|*=} options
+ * @param {ApplicationOptions|*} options
  */
 function startInternal(options) {
     var self = this;
@@ -1309,7 +1333,7 @@ function startInternal(options) {
 
 /**
  *
- * @param {{port:number,bind:string,cluster:number|string}|*=} options
+ * @param {ApplicationOptions|*} options
  */
 HttpApplication.prototype.start = function (options) {
     if (options.cluster) {
@@ -1409,28 +1433,20 @@ HttpApplication.prototype.controller = function(name, ctor) {
     this.config.controllers[name] = ctor;
     return this;
 };
-
+/**
+ * @param {HttpApplication} application
+ * @returns {{html: Function, text: Function, json: Function, unauthorized: Function}}
+ * @private
+ */
 function httpApplicationErrors(application) {
     var self = application;
     return {
-        /**
-         *
-         * @param {HttpContext} context
-         * @param {Error|*} error
-         * @param {function(Error=)} callback
-         */
         html: function(context, error, callback) {
             callback = callback || function () { };
             onHtmlError(context, error, function(err) {
                 callback.call(self, err);
             });
         },
-        /**
-         *
-         * @param {HttpContext} context
-         * @param {Error|HttpException|*} error
-         * @param {function(Error=)} callback
-         */
         text: function(context, error, callback) {
             callback = callback || function () { };
             /**
@@ -1460,12 +1476,6 @@ function httpApplicationErrors(application) {
             }
             callback.call(this);
         },
-        /**
-         *
-         * @param {HttpContext} context
-         * @param {Error|HttpException|*} error
-         * @param {function(Error=)} callback
-         */
         json: function(context, error, callback) {
             callback = callback || function () { };
             context.request.headers = context.request.headers || { };
@@ -1490,12 +1500,6 @@ function httpApplicationErrors(application) {
             //go to next error if any
             callback.call(self, error);
         },
-        /**
-         *
-         * @param {HttpContext} context
-         * @param {Error|*} error
-         * @param {function(Error=)} callback
-         */
         unauthorized: function(context, error, callback) {
             if (common.isNullOrUndefined(context) || common.isNullOrUndefined(context)) {
                 return callback.call(self);
@@ -1530,13 +1534,7 @@ function httpApplicationErrors(application) {
  * @module most-web
  */
 var web = {
-    /**
-     * @contructs HttpApplication
-     * */
     HttpApplication: HttpApplication,
-    /**
-     * @contructs HttpContext
-     * */
     HttpContext: HttpContext,
     /**
      * @type HttpApplication
@@ -1667,24 +1665,13 @@ var web = {
     },
     /**
      * @namespace
+     * @memberOf module:most-web
      */
     controllers: {
-        /**
-         * @constructs HttpController
-         */
         HttpController: mvc.HttpController,
-        /**
-         * @constructs HttpBaseController
-         */
-        HttpBaseController: HttpBaseController,
-        /**
-         * @constructs HttpDataController
-         */
-        HttpDataController: HttpDataController,
-        /**
-         * @constructs HttpDataController
-         */
-        HttpLookupController: HttpLookupController
+        HttpBaseController: require('./base-controller'),
+        HttpDataController: require('./data-controller'),
+        HttpLookupController: require('./lookup-controller')
     },
     views: {
         /**
@@ -1749,39 +1736,17 @@ var web = {
         inheritsController: function (ctor) {
             util.inherits(ctor, mvc.HttpController);
         },
-        /**
-         * @constructs HttpController
-         * */
         HttpController: mvc.HttpController,
-        /**
-         * @constructs HttpViewContext
-         */
         HttpViewContext:mvc.HttpViewContext
     },
-    html: {
-        /**
-         * @constructs html.HtmlWriter
-         */
-        HtmlWriter:html.HtmlWriter,
-        /**
-         * Creates an HTML writer object.
-         * @returns {HtmlWriter|*}
-         */
-        createHtmlWriter: function () {
-            return new html.HtmlWriter();
-        }
-    },
-    /**
-     * @type {common|*}
-     */
+    html: html,
+    mvc: mvc,
     common: common,
-    /**
-     * @type {files|*}
-     */
     files: files
 };
 /**
  * @type HttpApplication
+ * @private
  */
 var __current__ = null;
 
@@ -1816,7 +1781,6 @@ Object.defineProperty(web, 'current', {
 
 if (typeof exports !== 'undefined') {
     /**
-     * @module most-web
      * @see web
      */
     module.exports = web;

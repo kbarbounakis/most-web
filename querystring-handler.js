@@ -8,12 +8,16 @@
  * Released under the BSD3-Clause license
  * Date: 2014-12-02
  */
+/**
+ * @ignore
+ */
 var util = require('util'),
     querystring = require('querystring');
 /**
  * Provides a case insensitive attribute getter
  * @param name
  * @returns {*}
+ * @private
  */
 function caseInsensitiveAttribute(name) {
     if (typeof name === 'string') {

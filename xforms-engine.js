@@ -8,6 +8,9 @@
  * Released under the BSD3-Clause license
  * Date: 2014-05-07
  */
+/**
+ * @private
+ */
 var xforms = require('xforms'), xml = require('most-xml'), fs = require('fs');
 /**
  * @class XFormsEngine

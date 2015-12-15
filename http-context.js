@@ -9,6 +9,9 @@
  * Date: 2014-06-10
  */
 'use strict';
+/**
+ * @ignore
+ */
 var path = require('path'),
     util = require('util'),
     fs = require('fs'),

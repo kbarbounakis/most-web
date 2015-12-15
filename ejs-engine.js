@@ -8,6 +8,9 @@
  * Released under the BSD3-Clause license
  * Date: 2014-06-09
  */
+/**
+ * @ignore
+ */
 var app = require('./index'),
     async = require('async'),
     util = require('util'),

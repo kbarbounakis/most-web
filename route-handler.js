@@ -10,9 +10,8 @@
  */
 !(function() {
     /**
-	 * Routing HTTP Handler
-	 */
-
+     * @ignore
+     */
     var url = require('url'),
         array = require('most-array'),
         util = require('util'),
@@ -112,12 +111,9 @@
         catch (e) {
             callback.call(context, e);
         }
-    }
+    };
 
     if (typeof exports !== 'undefined') {
-        /**
-         * @returns {HttpHandler}
-         */
         exports.createInstance = function() {
             return new RouteHandler();
         };

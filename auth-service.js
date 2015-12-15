@@ -8,14 +8,13 @@
  * Released under the BSD3-Clause license
  * Date: 2014-11-15
  */
+/**
+ * @ignore
+ */
 var web = web = require('./index'), crypto = require('crypto'), util = require('util');
 
 if (typeof exports !== 'undefined') {
-    /**
-     * @param {HttpContext} context
-     * @returns {{login: function(string,string, function(Error)), logout: function(function(Error))}}
-     */
-    module.exports.createInstance = function(context) {
+    exports.createInstance = function(context) {
         return {
             login:function(userName, userPassword, callback) {
                 callback = callback || function() {};

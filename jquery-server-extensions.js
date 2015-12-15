@@ -8,6 +8,10 @@
  * Released under the BSD3-Clause license
  * Date: 2014-11-07
  */
+/**
+ * @param $
+ * @ignore
+ */
 exports.extend = function($) {
 
     $.fn.outerHTML = $.fn.outer = function () {

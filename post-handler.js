@@ -8,6 +8,9 @@
  * Released under the BSD3-Clause license
  * Date: 2014-07-02
  */
+/**
+ * @private
+ */
 var app = require('./index'),
     formidable = require('formidable'),
     util = require('util'),
@@ -97,6 +100,7 @@ function PostHandler() {
  * @param {string} value
  * @param {*=} options
  * @returns {*}
+ * @private
  */
 function extend(origin, expr, value, options) {
 
@@ -182,6 +186,7 @@ function extend(origin, expr, value, options) {
 /**
  * Parses a form object and returns form parameters as object e.g. user[name]=user&user1[password]=1234 returns user: { name: 'user1', password:'1234'}
  * @param form
+ * @private
  */
 function parseForm(form) {
     var result = {};
@@ -243,9 +248,6 @@ PostHandler.prototype.beginRequest = function(context, callback) {
 };
 
 if (typeof exports !== 'undefined') {
-    /**
-     * @returns {HttpHandler}
-     */
     exports.createInstance = function() {
         return new PostHandler();
     };

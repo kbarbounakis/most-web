@@ -9,10 +9,15 @@
  * Date: 2015-02-20
  */
 /**
- * @constructs HttpDataController
+ * @ignore
  */
 var HttpDataController = require('./data-controller'), util = require('util');
-
+/**
+ * @classdesc HttpLookupController class describes a lookup model data controller.
+ * @class
+ * @constructor
+ * @memberOf module:most-web.controllers
+ */
 function HttpLookupController() {
     HttpLookupController.super_.call(this);
 }

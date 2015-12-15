@@ -8,6 +8,9 @@
  * Released under the BSD3-Clause license
  * Date: 2014-05-07
  */
+/**
+ * @ignore
+ */
 var app = require('./index'),
     fs = require('fs'),
     path = require("path"),
@@ -242,9 +245,6 @@ StaticHandler.prototype.endRequest = function(context) { };
 
 
 if (typeof exports !== 'undefined') {
-    /**
-     * @returns {HttpHandler}
-     */
     exports.createInstance = function() {
         return new StaticHandler();
     };

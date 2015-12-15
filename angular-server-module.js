@@ -8,25 +8,21 @@
  * Released under the BSD3-Clause license
  * Date: 2014-10-09
  */
+/**
+ * @private
+ */
 var domino = require("domino");
-
+/**
+ * @class
+ * @constructor
+ * @property {*} directives
+ * @property {*} controllers
+ * @property {*} filters
+ * @property {*} services
+ * @private
+ */
 function AngularServerModule() {
-    /**
-     * @type {*}
-     */
-    this.directives = null;
-    /**
-     * @type {*}
-     */
-    this.controllers = null;
-    /**
-     * @type {*}
-     */
-    this.filters = null;
-    /**
-     * @type {*}
-     */
-    this.services = null;
+    //
 }
 /**
  * @param {string} name

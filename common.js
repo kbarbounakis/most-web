@@ -8,12 +8,16 @@
  * Released under the BSD3-Clause license
  * Date: 2014-06-09
  */
+/**
+ * @private
+ */
 var util = require('util'), errors = require('./http-error-codes.json'), crypto = require('crypto');
 
 /**
  * Abstract Method Exception class
- * @class AbstractMethodException
+ * @class
  * @augments Error
+ * @memberOf module:most-web.common
  * */
 function AbstractMethodException(message) {
     AbstractMethodException.super_.call(this, message || 'Cannot call an abstract method.', this.constructor);
@@ -22,10 +26,11 @@ function AbstractMethodException(message) {
 util.inherits(AbstractMethodException, Error);
 
 /**
- * @class FileNotFoundException
+ * @class
  * @param {number=} status
  * @constructor
  * @augments Error
+ * @memberOf module:most-web.common
  */
 function FileNotFoundException(message) {
 
@@ -33,11 +38,13 @@ function FileNotFoundException(message) {
 }
 util.inherits(FileNotFoundException, Error);
 /**
- * @class HttpException
+ * @class
+ * @constructor
  * @param {number=} status
  * @param {string=} message
  * @param {string=} innerMessage
- * @constructor
+ * @augments Error
+ * @memberOf module:most-web.common
  */
 function HttpException(status, message, innerMessage) {
     var hstatus = (typeof status==='undefined' || status == null) ? 500 : parseInt(status);
@@ -74,10 +81,11 @@ util.inherits(HttpException, Error);
 
 /**
  * HTTP 400 Bad Request exception class
- * @class HttpBadRequest
+ * @class
  * @param {string=} message
  * @param {string=} innerMessage
  * @augments HttpException
+ * @memberOf module:most-web.common
  * */
 function HttpBadRequest(message, innerMessage) {
     HttpBadRequest.super_.call(this, 400, message , innerMessage);
@@ -86,10 +94,11 @@ function HttpBadRequest(message, innerMessage) {
 util.inherits(HttpBadRequest, HttpException);
 /**
  * HTTP 404 Not Found Exception class
- * @class HttpNotFoundException
+ * @class
  * @param {string=} message
  * @param {string=} innerMessage
  * @augments HttpException
+ * @memberOf module:most-web.common
  * */
  function HttpNotFoundException(message, innerMessage) {
     HttpNotFoundException.super_.call(this, 404, message, innerMessage);
@@ -98,10 +107,11 @@ util.inherits(HttpBadRequest, HttpException);
 util.inherits(HttpNotFoundException, HttpException);
 /**
  * HTTP 405 Method Not Allowed exception class
- * @class HttpMethodNotAllowed
+ * @class
  * @param {string=} message
  * @param {string=} innerMessage
  * @augments HttpException
+ * @memberOf module:most-web.common
  * */
 function HttpMethodNotAllowed(message, innerMessage) {
     HttpMethodNotAllowed.super_.call(this, 405, message, innerMessage);
@@ -110,10 +120,11 @@ function HttpMethodNotAllowed(message, innerMessage) {
 util.inherits(HttpMethodNotAllowed, HttpException);
 /**
  * HTTP 401 Unauthorized Exception class
- * @class HttpUnauthorizedException
+ * @class
  * @param {string=} message
  * @param {string=} innerMessage
  * @augments HttpException
+ * @memberOf module:most-web.common
  * */
 function HttpUnauthorizedException(message, innerMessage) {
     HttpUnauthorizedException.super_.call(this, 401, message, innerMessage);
@@ -121,10 +132,11 @@ function HttpUnauthorizedException(message, innerMessage) {
 util.inherits(HttpUnauthorizedException, HttpException);
 /**
  * HTTP 403 Forbidden Exception class
- * @class HttpForbiddenException
+ * @class
  * @param {string=} message
  * @param {string=} innerMessage
  * @augments HttpException
+ * @memberOf module:most-web.common
  * */
 function HttpForbiddenException(message, innerMessage) {
     HttpForbiddenException.super_.call(this, 403, message, innerMessage);
@@ -137,14 +149,23 @@ util.inherits(HttpForbiddenException, HttpException);
  * @param {string=} message
  * @param {string=} innerMessage
  * @augments HttpException
+ * @memberOf module:most-web.common
  * */
 function HttpServerError(message, innerMessage) {
     HttpServerError.super_.call(this, 500, message , innerMessage);
 }
 util.inherits(HttpServerError, HttpException);
 
-/* common functions */
+/**
+ * @type {RegExp}
+ * @private
+ */
 var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+/**
+ * @param fn
+ * @returns {*}
+ * @private
+ */
 function getFunctionParams( fn ) {
     if (!isFunction(fn))
         return [];
@@ -157,6 +178,7 @@ function getFunctionParams( fn ) {
 /**
  * @param fn {Function}
  * @returns {Boolean}
+ * @private
  * */
 function isFunction( fn ) {
     return typeof fn === 'function';
@@ -182,7 +204,7 @@ UnknownValue.UndefinedRegex = /^undefined$/ig;
 UnknownValue.IntegerRegex =/^[-+]?\d+$/g;
 UnknownValue.FloatRegex =/^[+-]?\d+(\.\d+)?$/g;
 /**
- * @class UnknownPropertyDescriptor
+ * @class
  * @constructor
  */
 function UnknownPropertyDescriptor(obj, name) {
@@ -315,55 +337,32 @@ UnknownValue.extend = function(origin, expr, value, options) {
     }
     return origin;
 };
-
+/**
+ * @type {Array}
+ * @private
+ */
 var UUID_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
 
 /**
- * @namespace common
+ * @namespace
+ * @memberOf module:most-web
  */
 var common = {
-    /**
-     * @constructs AbstractMethodException
-     * */
     AbstractMethodException : AbstractMethodException,
-    /**
-     * @constructs FileNotFoundException
-     * */
     FileNotFoundException : FileNotFoundException,
-    /**
-     * @constructs HttpException
-     * */
     HttpException : HttpException,
     /**
-     * @param {Error} err
-     * @returns {Error|*}
+     * @param {Error|*} err
+     * @returns {HttpException}
      */
     httpError: function(err) {
         return HttpException.create(err);
     },
-    /**
-     * @constructs HttpNotFoundException
-     * */
     HttpNotFoundException : HttpNotFoundException,
-    /**
-     * @constructs HttpMethodNotAllowed
-     * */
     HttpMethodNotAllowed : HttpMethodNotAllowed,
-    /**
-     * @constructs HttpBadRequest
-     * */
     HttpBadRequest: HttpBadRequest,
-    /**
-     * @constructs HttpUnauthorizedException
-     * */
     HttpUnauthorizedException: HttpUnauthorizedException,
-    /**
-     * @constructs HttpForbiddenException
-     * */
     HttpForbiddenException: HttpForbiddenException,
-    /**
-     * @constructs HttpServerError
-     * */
     HttpServerError:HttpServerError,
     /**
      * @returns {Array}
@@ -675,10 +674,6 @@ var common = {
 };
 
 if (typeof exports !== 'undefined') {
-    /**
-     * @module most-web/common
-     * @see common
-     */
     module.exports = common;
 }
 

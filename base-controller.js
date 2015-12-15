@@ -8,12 +8,17 @@
  * Released under the BSD3-Clause license
  * Date: 2014-09-06
  */
+/**
+ * @ignore
+ */
 var util = require('util'),
     mvc = require('./http-mvc'),
     common = require('./common');
 /**
- * The base HTTP controller
+ * @classdesc HttpBaseController class describes a base controller.
+ * @class
  * @constructor
+ * @memberOf module:most-web.controllers
  */
 function HttpBaseController() {
     //

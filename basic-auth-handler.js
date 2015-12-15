@@ -8,6 +8,9 @@
  * Released under the BSD3-Clause license
  * Date: 2014-11-15
  */
+/**
+ * @ignore
+ */
 var web = require('./index');
 /**
  * @class BasicAuthHandler

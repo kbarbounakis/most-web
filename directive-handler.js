@@ -11,6 +11,9 @@
 /**
  * Created by kbarbounakis on 9/6/2014.
  */
+/**
+ * @ignore
+ */
 var fs = require("fs"),
     url = require("url"),
     util = require("util"),
@@ -119,6 +122,7 @@ DirectiveEngine.prototype.postExecuteResult = function(args, callback) {
          * @param $qs
          * @returns {$http}
          * @constructor
+         * @private
          */
         function HttpInternalProvider($context, $qs) {
 
