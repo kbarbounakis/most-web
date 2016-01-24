@@ -1751,14 +1751,16 @@ var web = {
 var __current__ = null;
 
 if (typeof global !== 'undefined' && global!=null) {
-    //set current application as global property (globals.application)
-    Object.defineProperty(global, 'application', {
-        get: function () {
-            return web.current;
-        },
-        configurable: false,
-        enumerable: false
-    });
+    if (typeof global.application === 'undefined') {
+        //set current application as global property (globals.application)
+        Object.defineProperty(global, 'application', {
+            get: function () {
+                return web.current;
+            },
+            configurable: false,
+            enumerable: false
+        });
+    }
 }
 
 Object.defineProperty(web, 'current', {
