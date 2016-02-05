@@ -29,6 +29,7 @@
   ],
   "dependencies": {
     "async": "0.2.10",
+    "moment": "~2.8.4",
     "body-parser": "~1.10.1",
     "domino": "1.0.18",
     "ejs": "0.8.5",

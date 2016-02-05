@@ -292,6 +292,9 @@ ViewHandler.prototype.preflightRequest = function (context, callback) {
     try {
         if (context && (context.request.currentHandler instanceof ViewHandler)) {
             context.response.setHeader("Access-Control-Allow-Origin", "*");
+            if (process.env.NODE_ENV === 'development' && context.request.headers.origin) {
+                context.response.setHeader("Access-Control-Allow-Origin", context.request.headers.origin);
+            }
             context.response.setHeader("Access-Control-Allow-Credentials", "true");
             context.response.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Content-Language, Accept, Accept-Language, Authorization");
             if (context.request.route && context.request.route.allow) {

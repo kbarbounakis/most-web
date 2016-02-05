@@ -256,6 +256,15 @@ HttpContext.prototype.cookie = function(name, value, expires, domain, cookiePath
         }
     }
 };
+
+/**
+ * @param {*} p
+ */
+HttpContext.prototype.moment = function(p) {
+    var moment = require("moment"), locale = this.culture();
+    return moment(p).locale(locale);
+};
+
 /**
  * @param {string} name - The name of the cookie to be added
  * @param {string|*} value - The value of the cookie
@@ -270,6 +279,14 @@ HttpContext.prototype.setCookie = function(name, value, expires, domain, cpath) 
     if (typeof value !== 'string')
         throw 'Invalid argument. Argument [value] must be a string.';
     this.cookie(name, value, expires, domain, cpath);
+};
+
+/**
+ * Set a permanent cookie for user preferred language
+ * @param lang - A string which represents the user preferred language e.g. en-US, en-GB etc
+ */
+HttpContext.prototype.setLangCookie = function(lang) {
+    this.cookie(".LANG", lang);
 };
 
 /**
@@ -349,8 +366,7 @@ HttpContext.prototype.culture = function(value) {
     if (typeof value === 'undefined') {
         if (this._culture)
             return this._culture;
-
-        //get available culures and default culture
+        //get available cultures and default culture
         var cultures = ['en-us'], defaultCulture = 'en-us';
         if (this.application.config.settings) {
             if (this.application.config.settings['localization']) {
@@ -358,31 +374,35 @@ HttpContext.prototype.culture = function(value) {
                 defaultCulture = this.application.config.settings['localization']['default'] || defaultCulture;
             }
         }
-        //get browser lang
         var lang = defaultCulture;
-        //2. Validate request HTTP header accept-language
-        if (this.request) {
-            if (this.request.headers['accept-language']) {
-                var langs = this.request.headers['accept-language'].split(';');
-                if (langs.length>0) {
-                    lang = langs[0].split(',')[0] || defaultCulture;
-                }
+        //1. Check HTTP cookie .LANG value
+        if (typeof self.cookie(".LANG") === "string") {
+            lang = self.cookie(".LANG");
+        }
+        //2. Check [lang] HTTP request param
+        else if (self.params && self.params.lang) {
+            lang = self.params.lang;
+        }
+        //2. Check request HTTP header [accept-language]
+        else if (self.request && self.request.headers && self.request.headers['accept-language']) {
+            var langs = self.request.headers['accept-language'].split(';');
+            if (langs.length>0) {
+                lang = langs[0].split(',')[0] || defaultCulture;
             }
         }
-        //get request parameter lang
-        if (self.params) {
-            lang = self.params.lang || lang;
-            if (lang) {
-                var arr = cultures.filter(function(x) {
-                    return (x == lang.toLowerCase()) || (x.substr(0,2) == lang.toLowerCase().substr(0,2));
-                });
-                if (arr.length>0) {
-                    this._culture=arr[0];
-                    return this._culture;
-                }
+        if (lang) {
+            //search application cultures
+            var obj = cultures.find(function(x) {
+                return (x == lang.toLowerCase()) || (x.substr(0,2) == lang.toLowerCase().substr(0,2));
+            });
+            //if user culture is valid for this application
+            if (obj) {
+                //set context culture
+                this._culture=obj;
+                return this._culture;
             }
         }
-
+        //otherwise use default culture
         this._culture = defaultCulture;
         return this._culture;
     }
