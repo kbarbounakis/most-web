@@ -245,8 +245,11 @@ StaticHandler.prototype.endRequest = function(context) { };
 
 
 if (typeof exports !== 'undefined') {
-    exports.createInstance = function() {
+    module.exports = {
+        StaticHandler:StaticHandler,
+        createInstance : function() {
         return new StaticHandler();
+    }
     };
 }
 
