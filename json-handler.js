@@ -11,7 +11,7 @@
 /**
  * @ignore
  */
-var bodyParser = require('body-parser'), jsonParser = bodyParser.json();
+var bodyParser = require('body-parser'), jsonParser;
 function JsonHandler() {
 
 }
@@ -21,6 +21,16 @@ JsonHandler.prototype.beginRequest = function(context, callback) {
     request.headers = request.headers || {};
     var contentType = request.headers['content-type'];
     if (/^application\/json/i.test(contentType)) {
+        //change: 15-Feb 2016
+        //description get json body limit from application configuration (settings#json.limit)
+        if (typeof jsonParser === 'undefined') {
+            //ensure settings
+            context.application.config.settings = context.application.config.settings || { };
+            //ensure json settings (the default limit is 100kb)
+            context.application.config.settings.json = context.application.config.settings.json || { limit:102400 };
+            //get json parser
+            jsonParser = bodyParser.json(context.application.config.settings.json);
+        }
         //parse request data
         jsonParser(request, response , function(err) {
             if (err) {
