@@ -1293,7 +1293,7 @@ function startInternal(options) {
         //extend options
         util._extend(opts, options);
 
-        http.createServer(function (request, response) {
+        var server_ = http.createServer(function (request, response) {
             var context = self.createContext(request, response);
             //begin request processing
             self.processRequest(context, function (err) {
@@ -1323,7 +1323,17 @@ function startInternal(options) {
                     });
                 }
             });
-        }).listen(opts.port, opts.bind);
+        });
+        /**
+         * @memberof {HttpApplication}
+         * @returns {Server|*}
+         */
+        self.getServer = function() {
+          return server_;
+        };
+
+        //start listening
+        server_.listen(opts.port, opts.bind);
         web.common.log(util.format('Web application is running at http://%s:%s/', opts.bind, opts.port));
 
     } catch (e) {
