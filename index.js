@@ -1271,10 +1271,12 @@ var HTTP_SERVER_DEFAULT_PORT = 3000;
 
 /**
  * @private
+ * @param {Function=} callback
  * @param {ApplicationOptions|*} options
  */
-function startInternal(options) {
+function startInternal(options, callback) {
     var self = this;
+    callback = callback || function() { };
     try {
         //validate options
 
@@ -1335,17 +1337,19 @@ function startInternal(options) {
         //start listening
         server_.listen(opts.port, opts.bind);
         web.common.log(util.format('Web application is running at http://%s:%s/', opts.bind, opts.port));
-
+        //do callback
+        callback.call(self);
     } catch (e) {
         console.log(e);
     }
 }
 
 /**
- *
  * @param {ApplicationOptions|*} options
+ * @param {Function=} callback
  */
-HttpApplication.prototype.start = function (options) {
+HttpApplication.prototype.start = function (options, callback) {
+    callback = callback || function() { };
     if (options.cluster) {
         var clusters = 1;
         //check if options.cluster="auto"
@@ -1379,15 +1383,15 @@ HttpApplication.prototype.start = function (options) {
                     if (debug) cluster.settings.execArgv.pop();
                 }
             } else {
-                startInternal.call(this,options);
+                startInternal.call(this,options, callback);
             }
         }
         else {
-            startInternal.call(this,options);
+            startInternal.call(this,options, callback);
         }
     }
     else {
-        startInternal.call(this,options);
+        startInternal.call(this,options, callback);
     }
 };
 /**
