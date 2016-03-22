@@ -694,6 +694,15 @@ HttpContext.prototype.engine = function(extension) {
     }
 };
 
+/**
+ * Creates a new instance of HttpViewContext class based on this HttpContext instance.
+ * @returns {HttpViewContext|*}
+ */
+HttpContext.prototype.createViewContext = function() {
+    var mvc = require("./http-mvc");
+    return new mvc.HttpViewContext(this);
+};
+
 if (typeof exports !== 'undefined')
     module.exports = {
         /**
