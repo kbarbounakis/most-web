@@ -9,7 +9,7 @@
  * Date: 2014-06-09
  */
 /**
- * @private
+ * @ignore
  */
 var util = require('util'), errors = require('./http-error-codes.json'), crypto = require('crypto');
 
@@ -17,7 +17,6 @@ var util = require('util'), errors = require('./http-error-codes.json'), crypto 
  * Abstract Method Exception class
  * @class
  * @augments Error
- * @memberOf module:most-web.common
  * */
 function AbstractMethodException(message) {
     AbstractMethodException.super_.call(this, message || 'Cannot call an abstract method.', this.constructor);
@@ -27,10 +26,9 @@ util.inherits(AbstractMethodException, Error);
 
 /**
  * @class
- * @param {number=} status
+ * @param {string=} message
  * @constructor
  * @augments Error
- * @memberOf module:most-web.common
  */
 function FileNotFoundException(message) {
 
@@ -44,7 +42,6 @@ util.inherits(FileNotFoundException, Error);
  * @param {string=} message
  * @param {string=} innerMessage
  * @augments Error
- * @memberOf module:most-web.common
  */
 function HttpException(status, message, innerMessage) {
     var hstatus = (typeof status==='undefined' || status == null) ? 500 : parseInt(status);
@@ -64,7 +61,7 @@ function HttpException(status, message, innerMessage) {
 
 /**
  * @param {Error} err
- * @returns {Error}
+ * @returns {Error|HttpException}
  */
 HttpException.create = function(err) {
     if (typeof err === 'undefined' || err==null)
@@ -75,7 +72,7 @@ HttpException.create = function(err) {
         else
             return new HttpException(500, err.message);
     }
-}
+};
 
 util.inherits(HttpException, Error);
 
@@ -85,7 +82,6 @@ util.inherits(HttpException, Error);
  * @param {string=} message
  * @param {string=} innerMessage
  * @augments HttpException
- * @memberOf module:most-web.common
  * */
 function HttpBadRequest(message, innerMessage) {
     HttpBadRequest.super_.call(this, 400, message , innerMessage);
@@ -98,7 +94,6 @@ util.inherits(HttpBadRequest, HttpException);
  * @param {string=} message
  * @param {string=} innerMessage
  * @augments HttpException
- * @memberOf module:most-web.common
  * */
  function HttpNotFoundException(message, innerMessage) {
     HttpNotFoundException.super_.call(this, 404, message, innerMessage);
@@ -111,7 +106,6 @@ util.inherits(HttpNotFoundException, HttpException);
  * @param {string=} message
  * @param {string=} innerMessage
  * @augments HttpException
- * @memberOf module:most-web.common
  * */
 function HttpMethodNotAllowed(message, innerMessage) {
     HttpMethodNotAllowed.super_.call(this, 405, message, innerMessage);
@@ -124,7 +118,6 @@ util.inherits(HttpMethodNotAllowed, HttpException);
  * @param {string=} message
  * @param {string=} innerMessage
  * @augments HttpException
- * @memberOf module:most-web.common
  * */
 function HttpUnauthorizedException(message, innerMessage) {
     HttpUnauthorizedException.super_.call(this, 401, message, innerMessage);
@@ -136,7 +129,6 @@ util.inherits(HttpUnauthorizedException, HttpException);
  * @param {string=} message
  * @param {string=} innerMessage
  * @augments HttpException
- * @memberOf module:most-web.common
  * */
 function HttpForbiddenException(message, innerMessage) {
     HttpForbiddenException.super_.call(this, 403, message, innerMessage);
@@ -149,7 +141,6 @@ util.inherits(HttpForbiddenException, HttpException);
  * @param {string=} message
  * @param {string=} innerMessage
  * @augments HttpException
- * @memberOf module:most-web.common
  * */
 function HttpServerError(message, innerMessage) {
     HttpServerError.super_.call(this, 500, message , innerMessage);
@@ -169,10 +160,10 @@ var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
 function getFunctionParams( fn ) {
     if (!isFunction(fn))
         return [];
-    var fnStr = fn.toString().replace(STRIP_COMMENTS, '')
-    var result = fnStr.slice(fnStr.indexOf('(')+1, fnStr.indexOf(')')).match(/([^\s,]+)/g)
+    var fnStr = fn.toString().replace(STRIP_COMMENTS, '');
+    var result = fnStr.slice(fnStr.indexOf('(')+1, fnStr.indexOf(')')).match(/([^\s,]+)/g);
     if(result === null)
-        result = []
+        result = [];
     return result
 }
 /**
@@ -182,7 +173,7 @@ function getFunctionParams( fn ) {
  * */
 function isFunction( fn ) {
     return typeof fn === 'function';
-};
+}
 
 /**
  * @class UnknownValue
@@ -192,9 +183,9 @@ function UnknownValue() {
     //
 }
 
-UnknownValue.prototype.valueOf = function() { return null; }
+UnknownValue.prototype.valueOf = function() { return null; };
 
-UnknownValue.prototype.toJSON = function() { return null; }
+UnknownValue.prototype.toJSON = function() { return null; };
 
 UnknownValue.DateTimeRegex = /^(\d{4})(?:-?W(\d+)(?:-?(\d+)D?)?|(?:-(\d+))?-(\d+))(?:[T ](\d+):(\d+)(?::(\d+)(?:\.(\d+))?)?)?(?:Z(-?\d*))?$/g;
 UnknownValue.BooleanTrueRegex = /^true$/ig;
@@ -343,10 +334,6 @@ UnknownValue.extend = function(origin, expr, value, options) {
  */
 var UUID_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
 
-/**
- * @namespace
- * @memberOf module:most-web
- */
 var common = {
     AbstractMethodException : AbstractMethodException,
     FileNotFoundException : FileNotFoundException,
@@ -426,7 +413,7 @@ var common = {
      * @param {number} max
      */
     randomInt: function(min, max) {
-        return Math.floor(Math.random()*max) + min;
+        return Math.floor(Math.random() * (max - min + 1)) + min;
     },
     /**
      * Returns a random string based on the length specified
@@ -473,7 +460,7 @@ var common = {
         var out = "", length= 1, a = 'a'.charCodeAt(0);
         while(length<=8)
         {
-            out += String.fromCharCode(a + (num % 26))
+            out += String.fromCharCode(a + (num % 26));
             num = Math.floor(num / 26);
             length += 1;
         }
@@ -514,7 +501,7 @@ var common = {
         return uuid.join('');
     },
     /**
-     * @param {IncomingMessage|ClientRequest} request
+     * @param {*} request
      * @returns {*}
      */
     parseCookies : function(request) {

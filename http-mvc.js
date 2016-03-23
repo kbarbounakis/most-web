@@ -24,7 +24,6 @@ var common = require('./common'),
 /**
  * @class
  * @constructor
- * @memberOf module:most-web.mvc
  */
 function HttpResult() {
     this.contentType = 'text/html';
@@ -66,7 +65,6 @@ HttpResult.prototype.execute = function(context, callback) {
  * @class HttpContentResult
  * @param {string} content
  * @augments HttpResult
- * @memberOf module:most-web.mvc
  * */
 function HttpContentResult(content) {
 
@@ -84,7 +82,6 @@ util.inherits(HttpContentResult,HttpResult);
  * @class HttpEmptyResult
  * @constructor
  * @augments HttpResult
- * @memberOf module:most-web.mvc
  */
 function HttpEmptyResult() {
     //
@@ -119,7 +116,6 @@ function _json_ignore_null_replacer(key, value) {
  * @param {*} data
  * @constructor
  * @augments HttpResult
- * @memberOf module:most-web.mvc
  */
 function HttpJsonResult(data)
 {
@@ -143,7 +139,6 @@ util.inherits(HttpJsonResult,HttpResult);
  * @param {*} data
  * @constructor
  * @augments HttpResult
- * @memberOf module:most-web.mvc
  */
 function HttpJavascriptResult(data)
 {
@@ -164,7 +159,6 @@ util.inherits(HttpJavascriptResult,HttpResult);
  * @param data
  * @constructor
  * @augments HttpResult
- * @memberOf module:most-web.mvc
  */
 function HttpXmlResult(data)
 {
@@ -190,7 +184,6 @@ util.inherits(HttpXmlResult,HttpResult);
  * @param {string|*} url
  * @constructor
  * @augments HttpResult
- * @memberOf module:most-web.mvc
  */
 function HttpRedirectResult(url) {
     this.url = url;
@@ -223,7 +216,6 @@ HttpRedirectResult.prototype.execute = function(context, callback)
  * @param {string=} fileName
  * @constructor
  * @augments HttpResult
- * @memberOf module:most-web.mvc
  */
 function HttpFileResult(physicalPath, fileName) {
     //
@@ -400,7 +392,6 @@ function isAbsolute(p) {
  * @param {string=} name - The name of the view.
  * @param {Array=} data - The data that are going to be used to render the view.
  * @augments HttpResult
- * @memberOf module:most-web.mvc
  */
 function HttpViewResult(name, data)
 {
@@ -552,7 +543,6 @@ HttpViewResult.prototype.execute = function(context, callback)
  * @param {HttpContext} context - The executing HTTP context.
  * @property {HttpContext} context - Gets or sets the HTTP context associated with this controller
  * @property {string} name - Gets or sets the internal name for this controller
- * @memberOf module:most-web.mvc
  * */
 function HttpController(context) {
     this.context = context;
@@ -710,7 +700,6 @@ HttpController.prototype.empty = function()
  * @param {HttpContext} context
  * @constructor
  * @augments {EventEmitter}
- * @memberOf module:most-web.mvc
  */
 function HttpViewEngine(context) {
     //
@@ -731,7 +720,6 @@ HttpViewEngine.prototype.render = function(url, options, callback) {
  * Defines an HTTP view engine in application configuration
  * @class
  * @constructor
- * @memberOf module:most-web.mvc
  */
 function HttpViewEngineReference()
 {
@@ -760,7 +748,6 @@ function HttpViewEngineReference()
  * @property {HtmlWriter} html
  * @constructor
  * @augments {EventEmitter}
- * @memberOf module:most-web.mvc
  */
 function HttpViewContext(context) {
     /**
@@ -911,7 +898,6 @@ HttpViewContext.HtmlViewHelper = function($view)
  * @constructor
  * @property {HttpViewContext} parent - The parent HTTP View Context
  * @property {HTMLDocument|*} document - The in-process HTML Document
- * @memberOf module:most-web.mvc
  */
 function HtmlViewHelper(view) {
     var document, self = this;
@@ -958,10 +944,6 @@ HtmlViewHelper.prototype.lang = function() {
     return 'en';
 };
 
-/**
- * @namespace mvc
- * @memberOf module:most-web
- */
 var mvc = {
     HttpResult : HttpResult,
     HttpContentResult : HttpContentResult,

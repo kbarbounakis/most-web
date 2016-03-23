@@ -1545,7 +1545,7 @@ function httpApplicationErrors(application) {
 }
 
 /**
- * @module most-web
+ * @module
  */
 var web = {
     HttpApplication: HttpApplication,
@@ -1796,8 +1796,5 @@ Object.defineProperty(web, 'current', {
 });
 
 if (typeof exports !== 'undefined') {
-    /**
-     * @see web
-     */
     module.exports = web;
 }
