@@ -110,16 +110,6 @@ ViewHandler.queryControllerClass = function(controllerName, context, callback) {
     }
 };
 
-//ViewHandler.prototype.beginRequest = function (context, callback) {
-//    //angularjs compatibility headers
-//    if (context.response) {
-//        context.response.setHeader("Access-Control-Allow-Origin", "*");
-//        context.response.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-//        context.response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-//    }
-//    callback();
-//};
-
 ViewHandler.RestrictedLocations = [
     { "path":"^/controllers/", "description":"Most web framework server controllers" },
     { "path":"^/models/", "description":"Most web framework server models" },
@@ -291,22 +281,66 @@ ViewHandler.prototype.postMapRequest = function (context, callback) {
 ViewHandler.prototype.preflightRequest = function (context, callback) {
     try {
         if (context && (context.request.currentHandler instanceof ViewHandler)) {
-            context.response.setHeader("Access-Control-Allow-Origin", "*");
-            if (process.env.NODE_ENV === 'development' && context.request.headers.origin) {
-                context.response.setHeader("Access-Control-Allow-Origin", context.request.headers.origin);
+            //set the default origin (with wildcard)
+            var allowCredentials = true,
+                allowOrigin="*",
+                allowHeaders = "Origin, X-Requested-With, Content-Type, Content-Language, Accept, Accept-Language, Authorization",
+                allowMethods = "GET, OPTIONS, PUT, POST, DELETE";
+
+            /**
+             * @private
+             * @type {{allowOrigin:string,allowHeaders:string,allowCredentials:Boolean,allowMethods:string,allow:string}|*}
+             */
+            var route = context.request.route;
+            if (route) {
+                if (typeof route.allowOrigin !== 'undefined')
+                    allowOrigin = route.allowOrigin;
+                if (typeof route.allowHeaders !== 'undefined')
+                    allowHeaders = route.allowHeaders;
+                if (typeof route.allowCredentials !== 'undefined')
+                    allowCredentials = route.allowCredentials;
+                if ((typeof route.allowMethods !== 'undefined') || (typeof route.allow !== 'undefined'))
+                    allowMethods = route.allow || route.allowMethods;
             }
-            context.response.setHeader("Access-Control-Allow-Credentials", "true");
-            context.response.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Content-Language, Accept, Accept-Language, Authorization");
-            if (context.request.route && context.request.route.allow) {
-                context.response.setHeader('Access-Control-Allow-Methods', context.request.route.allow);
+            //ensure header names
+            var headerNames = context.response["_headerNames"] || { };
+            //1. Access-Control-Allow-Origin
+            if (typeof headerNames["access-control-allow-origin"] === 'undefined') {
+                //if request contains origin header
+                if (context.request.headers.origin) {
+                    if (allowOrigin === "*") {
+                        //set access-control-allow-origin header equal to request origin header
+                        context.response.setHeader("Access-Control-Allow-Origin", context.request.headers.origin);
+                    }
+                    else if (allowOrigin.indexOf(context.request.headers.origin)>-1) {
+                        context.response.setHeader("Access-Control-Allow-Origin", context.request.headers.origin);
+                    }
+                }
+                else {
+                    //set access-control-allow-origin header equal to the predefined origin header
+                    context.response.setHeader("Access-Control-Allow-Origin", "*");
+                }
             }
-            else {
-                context.response.setHeader('Access-Control-Allow-Methods', "GET, OPTIONS, PUT, POST, DELETE");
+            //2. Access-Control-Allow-Origin
+            if (typeof headerNames["access-control-allow-credentials"] === 'undefined') {
+                context.response.setHeader("Access-Control-Allow-Credentials", allowCredentials);
+            }
+
+            //3. Access-Control-Allow-Headers
+            if (typeof headerNames["access-control-allow-headers"] === 'undefined') {
+                context.response.setHeader("Access-Control-Allow-Headers", allowHeaders);
+            }
+
+            //4. Access-Control-Allow-Methods
+            if (typeof headerNames["access-control-allow-methods"] === 'undefined') {
+                context.response.setHeader("Access-Control-Allow-Methods", allowMethods);
             }
         }
+        if (typeof callback === 'undefined') { return; }
         return callback();
     }
     catch(e) {
+        if (typeof callback === 'undefined') { throw e; }
         callback(e);
     }
 
