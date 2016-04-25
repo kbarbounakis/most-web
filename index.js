@@ -1544,9 +1544,7 @@ function httpApplicationErrors(application) {
     }
 }
 
-/**
- * @module
- */
+
 var web = {
     HttpApplication: HttpApplication,
     HttpContext: HttpContext,
@@ -1677,10 +1675,6 @@ var web = {
             }
         };
     },
-    /**
-     * @namespace
-     * @memberOf module:most-web
-     */
     controllers: {
         HttpController: mvc.HttpController,
         HttpBaseController: require('./base-controller'),
