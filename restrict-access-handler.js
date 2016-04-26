@@ -73,6 +73,7 @@ function RestrictHandler() {
  */
 RestrictHandler.prototype.authorizeRequest = function (context, callback) {
     try {
+        if (context.is('OPTIONS')) { return callback(); }
         if (context.user.name=='anonymous')
         {
             RestrictHandler.prototype.isRestricted(context, function(err, result) {

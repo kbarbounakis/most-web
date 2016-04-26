@@ -143,11 +143,23 @@ StaticHandler.prototype.unmodifiedRequest = function(context, executionPath, cal
 
 StaticHandler.prototype.preflightRequest = function(context, callback) {
     try {
+
         if (context && (context.request.currentHandler instanceof StaticHandler)) {
-            context.response.setHeader("Access-Control-Allow-Origin", "*");
-            context.response.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Content-Language, Accept, Accept-Language, Authorization");
-            context.response.setHeader("Access-Control-Allow-Credentials", "true");
-            context.response.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+            var headerNames = context.response["_headerNames"] || { };
+            if (typeof headerNames["access-control-allow-origin"] === 'undefined') {
+                if (context.request.headers.origin) {
+                    context.response.setHeader("Access-Control-Allow-Origin", context.request.headers.origin);
+                }
+                else {
+                    context.response.setHeader("Access-Control-Allow-Origin", "*");
+                }
+            }
+            if (typeof headerNames["access-control-allow-headers"] === 'undefined')
+                context.response.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Content-Language, Accept, Accept-Language, Authorization");
+            if (typeof headerNames["access-control-allow-credentials"] === 'undefined')
+                context.response.setHeader("Access-Control-Allow-Credentials", "true");
+            if (typeof headerNames["access-control-allow-methods"] === 'undefined')
+                context.response.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
         }
         return callback();
     }
