@@ -400,11 +400,21 @@ function HttpViewResult(name, data)
     this.contentType = 'text/html';
     this.contentEncoding = 'utf8';
 }
-
 /**
  * Inherits HttpAction
  * */
 util.inherits(HttpViewResult,HttpResult);
+
+/**
+ * Sets or changes the name of this HttpViewResult instance.
+ * @param {string} s
+ * @returns {HttpViewResult}
+ */
+HttpViewResult.prototype.setName = function(s) {
+    this.name = s;
+    return this;
+};
+
 /**
  * @param {function(Error=,*=)} callback
  * @param {HttpContext} context - The HTTP context
@@ -551,7 +561,7 @@ function HttpController(context) {
 /**
  * Creates a view result object for the given request.
  * @param {*=} data
- * @returns {module.HttpViewResult}
+ * @returns {HttpViewResult}
  */
 HttpController.prototype.view = function(data)
 {

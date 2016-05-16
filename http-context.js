@@ -561,18 +561,38 @@ HttpContext.prototype.isPost = function () {
  * @returns {HttpContext}
  */
 HttpContext.prototype.handle = function(method, fn) {
-    if (this.is(method)) {
-        this.handled = true;
-        fn.call(this);
+    var self = this;
+    if (self.is(method)) {
+        self.handled = true;
+        process.nextTick(function () {
+            fn.call(self);
+        });
     }
-    return this;
-}
+    return self;
+};
+/**
+ * Handles context error by executing the given callback
+ * @param {Function} callback
+ */
+HttpContext.prototype.catch = function(callback) {
+    var self = this;
+    callback = callback || function() {};
+    self.once("error", function(ev) {
+        return callback.call(self, ev.error);
+    });
+    return self;
+};
 
+/**
+ * @param {Function} fn
+ * @returns {HttpContext}
+ */
 HttpContext.prototype.unhandle = function(fn) {
     if (!this.handled) {
         fn.call(this);
     }
-}
+    return this;
+};
 
 /**
  * Invokes the given function if the current HTTP method is equal to POST

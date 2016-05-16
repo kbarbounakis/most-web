@@ -1300,6 +1300,14 @@ function startInternal(options, callback) {
             //begin request processing
             self.processRequest(context, function (err) {
                 if (err) {
+                    //handle context error event
+                    if (context.listeners('error').length>0) {
+                        return context.emit('error', { error:err }, function() {
+                            context.finalize(function() {
+                                if (context.response) { context.response.end(); }
+                            });
+                        });
+                    }
                     if (self.listeners('error').length == 0) {
                         self.onError(context, err, function () {
                             if (typeof context === 'undefined' || context == null) { return; }
