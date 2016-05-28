@@ -755,7 +755,7 @@ function HttpViewEngineReference()
  * @class
  * @param {HttpContext} context
  * @property {DataModel} model
- * @property {HtmlWriter} html
+ * @property {HtmlViewHelper} html
  * @constructor
  * @augments {EventEmitter}
  */
@@ -943,7 +943,7 @@ HtmlViewHelper.prototype.element = function(obj) {
 };
 
 HtmlViewHelper.prototype.lang = function() {
-    var $view = this.view;
+    var $view = this.parent;
     var context = $view.context, c= context.culture();
     if (typeof c === 'string') {
         if (c.length>=2) {
