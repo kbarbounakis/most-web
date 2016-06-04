@@ -397,7 +397,7 @@ function HttpViewResult(name, data)
 {
     this.name = name;
     this.data = data==undefined? []: data;
-    this.contentType = 'text/html';
+    this.contentType = 'text/html;charset=utf-8';
     this.contentEncoding = 'utf8';
 }
 /**

@@ -51,7 +51,7 @@ DirectiveEngine.prototype.postExecuteResult = function(args, callback) {
             return;
         }
         //ensure view content type (text/html)
-        if (view.contentType !== 'text/html') {
+        if (!/^text\/html/.test(view.contentType)) {
             callback();
             return;
         }

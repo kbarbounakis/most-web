@@ -13,6 +13,7 @@
  */
 var app = require('./index'),
     async = require('async'),
+    ejs = require('ejs'),
     util = require('util'),
     path = require('path');
 /**
@@ -39,6 +40,15 @@ function EjsEngine(context) {
 }
 
 /**
+ * Adds a EJS filter to filters collection.
+ * @param {string} name
+ * @param {Function} fn
+ */
+EjsEngine.prototype.filter = function(name, fn) {
+    ejs.filters[name] = fn;
+};
+
+/**
  *
  * @param {string} filename
  * @param {*=} data
@@ -47,7 +57,7 @@ function EjsEngine(context) {
 EjsEngine.prototype.render = function(filename, data, callback) {
     var self = this;
     try {
-        var ejs = require('ejs'), fs = require('fs'), common = require('./common');
+        var fs = require('fs'), common = require('./common');
         fs.readFile(filename,'utf-8', function(err, str) {
             try {
                 if (err) {
@@ -120,7 +130,7 @@ EjsEngine.prototype.render = function(filename, data, callback) {
     catch (e) {
         callback.call(self, e);
     }
-}
+};
 
 /**
  *
