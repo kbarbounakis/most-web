@@ -438,7 +438,7 @@ HttpViewResult.prototype.execute = function(context, callback)
     //validate [path] route param in order to load a view that is located in a views' sub-directory (or in another absolute path)
     var routePath;
     if (context.request.route) {
-        routePath =  context.request.route.path || context.request.route.data("path");
+        routePath =  context.request.route.path;
     }
     //get view name
     var viewName = this.name;

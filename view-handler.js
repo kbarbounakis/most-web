@@ -19,7 +19,7 @@ var app = require('./index'),
     url = require('url'),
     util = require('util'),
     fs = require('fs'),
-    route = require('./http-route.js'),
+    route = require('./http-route'),
     xml = require('most-xml'),
     path=require('path'),
     S = require('string');
@@ -50,7 +50,7 @@ Object.inherits = function (ctor, superCtor) {
             superCtor = superCtor.super_;
         }
     }
-}
+};
 ViewHandler.STR_CONTROLLERS_FOLDER = 'controllers';
 ViewHandler.STR_CONTROLLER_FILE = './%s-controller.js';
 ViewHandler.STR_CONTROLLER_RELPATH = '/controllers/%s-controller.js';
@@ -125,9 +125,13 @@ ViewHandler.prototype.authorizeRequest = function (context, callback) {
             /**
              * @type {*|LocationSetting}
              */
-            var location = ViewHandler.RestrictedLocations[i], re = new RegExp(location.path,'ig');
+            var location = ViewHandler.RestrictedLocations[i],
+                /**
+                 * @type {RegExp}
+                 */
+                re = new RegExp(location.path,'ig');
             if (re.test(uri.pathname)) {
-                callback(new app.common.HttpException(403, 'Forbidden'))
+                callback(new app.common.HttpException(403, 'Forbidden'));
                 return;
             }
         }
@@ -140,88 +144,63 @@ ViewHandler.prototype.authorizeRequest = function (context, callback) {
 
 /**
  * @param {HttpContext} context
+ * @param {Function} callback
  */
 ViewHandler.prototype.mapRequest = function (context, callback) {
-    callback = callback || function () {
-    };
-
+    callback = callback || function () { };
     //try to map request
     try {
-
         //first of all check if a request handler is already defined
         if (typeof context.request.currentHandler !== 'undefined') {
             //do nothing (exit mapping)
-            callback();
-            return;
+            return callback();
         }
-
         var requestUri = url.parse(context.request.url);
-
         /**
          * find route by querying application routes
          * @type {HttpRoute}
          */
         var currentRoute = queryRoute(requestUri);
         if (typeof currentRoute === 'undefined' || currentRoute == null) {
-            //do nothing
-            callback();
-            return;
+            return callback();
         }
-        fs.stat(app.current.mapPath(context.request.url), function(err, stats) {
-
-            if (stats && stats.isFile()) {
-                //do nothing
+        //query controller
+        var controllerName = currentRoute.routeData["controller"] || queryController(requestUri);
+        if (typeof controllerName === 'undefined' || controllerName == null) {
+            return callback();
+        }
+        //try to find controller class
+        ViewHandler.queryControllerClass(controllerName, context, function(err, ControllerClass) {
+            if (err) {
+                return callback(err);
+            }
+            try {
+                //initialize controller
+                var controller = new ControllerClass();
+                //set controller's name
+                controller.name = controllerName.toLowerCase();
+                //set controller's context
+                controller.context = context;
+                //set request handler
+                var handler = new ViewHandler();
+                handler.controller = controller;
+                context.request.currentHandler = handler;
+                //set route data
+                context.request.route = util._extend({ },currentRoute.route);
+                context.request.routeData = currentRoute.routeData;
+                //set route data as params
+                for(var prop in currentRoute.routeData) {
+                    if (currentRoute.routeData.hasOwnProperty(prop)) {
+                        context.params[prop] = currentRoute.routeData[prop];
+                    }
+                }
                 return callback();
             }
-            else {
-
-                try {
-                    //query controller
-                    var arr = currentRoute.routeData.filter(function(x) { return (x.name==":controller"); });
-                    var controllerName = (arr.length>0) ? arr[0].value : queryController(requestUri);
-                    if (controllerName != null) {
-                        //try to find controller class
-                        ViewHandler.queryControllerClass(controllerName, context, function(err, ControllerClass) {
-                            if (err) {
-                                callback(err)
-                            }
-                            else {
-                                try {
-                                    //initialize controller
-                                    var controller = new ControllerClass();
-                                    //set controller's name
-                                    controller.name = controllerName.toLowerCase();
-                                    //set controller's context
-                                    controller.context = context;
-                                    //set request handler
-                                    var handler = new ViewHandler();
-                                    handler.controller = controller;
-                                    context.request.currentHandler = handler;
-                                    //set route data
-                                    context.request.route = currentRoute;
-                                    context.request.routeData = currentRoute.routeData;
-                                    //set route data as params
-                                    for (var i = 0; i < currentRoute.routeData.length; i++) {
-                                        var item = currentRoute.routeData[i], name = item.name.substr(1);
-                                        context.params[name] = item.value;
-                                    }
-                                    callback.call(context);
-                                }
-                                catch(e) {
-                                    callback(e);
-                                }
-                            }
-                        });
-                    }
-                    else {
-                        callback.call(context);
-                    }
-                }
-                catch(e) {
-                    callback(e);
-                }
+            catch(e) {
+                return callback(e);
             }
         });
+
     }
     catch (e) {
         callback(e);
@@ -234,12 +213,9 @@ ViewHandler.prototype.mapRequest = function (context, callback) {
  */
 ViewHandler.prototype.postMapRequest = function (context, callback) {
     try {
-        var model, obj;
-        if (context.params)
-            if (context.params.controller)
-                model = context.model(context.params.controller);
         ViewHandler.prototype.preflightRequest.call(this, context, function(err) {
             if (err) { return callback(err); }
+            var obj;
             if (context.is('POST')) {
                 if (context.format=='xml') {
                     //get current model
@@ -357,7 +333,7 @@ ViewHandler.prototype.processRequest = function (context, callback) {
             //do nothing
             return callback();
         }
-        var common = require('./common'), app = require('./index');
+        var app = require('./index');
         //validate request controller
         var controller = self.controller;
         if (controller) {
@@ -378,8 +354,8 @@ ViewHandler.prototype.processRequest = function (context, callback) {
                     return callback(new app.common.HttpNotFoundException());
                 }
                 //enumerate params
-                var params = common.getFunctionParams(fn);
-                params = [];
+                //var params = common.getFunctionParams(fn);
+                var params = [];
                 /**
                  * @type HttpResult
                  * */
@@ -407,64 +383,26 @@ ViewHandler.prototype.processRequest = function (context, callback) {
 
 /**
  *
- * @param {String} requestUrl
+ * @param {string|*} requestUri
  * @returns {HttpRoute}
  * @private
  */
 function queryRoute(requestUri) {
     try {
-        var array = require('most-array'),
-            util = require('util'),
-            route = require('./http-route.js'),
-            app = require('./index');
+        var app = require('./index');
         /**
          * @type Array
          * */
         var routes = app.current.config.routes;
         //enumerate registered routes
-        var httpRoute = null;
-        array(routes).each(function (item) {
-            //initialize HttpRoute object
-            /**
-             * @type HttpRoute
-             */
-            httpRoute = route.createInstance(item.url, item.route);
-            util._extend(httpRoute, item);
+        var httpRoute = route.createInstance();
+        for (var i = 0; i < routes.length; i++) {
+            httpRoute.route = routes[i];
             //if uri path is matched
             if (httpRoute.isMatch(requestUri.pathname)) {
-                //parse route
-                httpRoute.parse(requestUri.pathname);
-                //get or set controller
-                var param = array(httpRoute.routeData).firstOrDefault(function (x) {
-                    return x.name == ":controller";
-                });
-                if (!param) {
-                    if (item.controller) {
-                        httpRoute.routeData.push({name: ":controller", value: item.controller})
-                    }
-                    else {
-                        httpRoute.routeData.push({name: ":controller", value: queryController(requestUri)})
-                    }
-                }
-                //get or set action
-                param = array(httpRoute.routeData).firstOrDefault(function (x) {
-                    return x.name == ":action";
-                });
-                if (!param) httpRoute.routeData.push({name: ":action", value: item.action});
-                if (item.mime) {
-                    httpRoute.routeData.push({name: ":mime", value: item.mime });
-                }
-                else {
-                    var mime = app.current.resolveMime(requestUri.pathname);
-                    if (mime)
-                        httpRoute.routeData.push({name: ":mime", value: mime.type });
-                }
-                //exit loop
-                return false;
+                return httpRoute;
             }
-            httpRoute = null;
-        });
-        return httpRoute;
+        }
     }
     catch (e) {
         throw e;
@@ -473,37 +411,10 @@ function queryRoute(requestUri) {
 
 /**
  * Gets the controller of the given url
- * @param requestUrl {Url} - A string that represents the url we want to parse.
+ * @param {string|*} requestUri - A string that represents the url we want to parse.
  * @private
  * */
 function queryController(requestUri) {
-    try {
-        if (requestUri === undefined)
-            return null;
-        //split path
-        var segments = requestUri.pathname.split('/');
-        //put an exception for root controller
-        //maybe this is unnecessary exception but we need to search for root controller e.g. /index.html, /about.html
-        if (segments.length == 2)
-            return 'root';
-        else
-        //e.g /pages/about where segments are ['','pages','about']
-        //and the controller of course is always the second segment.
-            return segments[1];
-        //todo:validate workspaces (e.g. /my-workspace/pages/about) where controller segment differs based on the workspace url.
-
-    }
-    catch (e) {
-        throw e;
-    }
-}
-
-/**
- * Gets the action of the given url
- * @param requestUrl {Url} - A string that represents the url we want to parse.
- * @private
- * */
-function queryAction(requestUri) {
     try {
         if (requestUri === undefined)
             return null;

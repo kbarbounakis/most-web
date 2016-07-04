@@ -21,15 +21,14 @@ var path = require('path'),
     common = require('./common');
 /**
  * Creates an instance of HttpContext class.
- * @class HttpContext
+ * @class
  * @property {{extension:string,type:string}} mime - Gets an object which represents the mime type associated with this context.
  * @property {string} format - Gets a string which represents the response format of this context (e.g html, json, js etc).
  * @constructor
  * @augments DataContext
  * @augments EventEmitter2
- * @implements DataContext
- * @param {ClientRequest} request
- * @param {ServerResponse} response
+ * @param {ClientRequest} httpRequest
+ * @param {ServerResponse} httpResponse
  * @returns {HttpContext}
  */
 function HttpContext(httpRequest, httpResponse) {
@@ -121,7 +120,6 @@ function HttpContext(httpRequest, httpResponse) {
      */
     this.params = {};
 
-    var self = this;
     var data = null;
     Object.defineProperty(this, 'data', {
         get: function () {
@@ -137,9 +135,11 @@ function HttpContext(httpRequest, httpResponse) {
             }
             else {
                 data = {};
-                array(self.request.routeData).each(function (item) {
-                    data[item.name.replace(/^:/, '')] = item.value;
-                });
+                for(var key in self.request.routeData) {
+                    if (self.request.routeData.hasOwnProperty(key)) {
+                        data[key] = self.request.routeData[key];
+                    }
+                }
                 return data;
             }
         }, configurable: false, enumerable: false
