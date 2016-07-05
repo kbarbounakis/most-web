@@ -91,7 +91,7 @@ HttpRoute.prototype.isMatch = function (urlToMatch) {
         match = re.exec(this.route.url);
     }
     var str = this.route.url.replace(re, "([\\w-]+)"),
-        matcher = new RegExp("^" + str + "$");
+        matcher = new RegExp("^" + str + "$", "ig");
     match = matcher.exec(str1);
     if (typeof match === 'undefined' || match == null) {
         return false;
@@ -108,11 +108,8 @@ HttpRoute.prototype.isMatch = function (urlToMatch) {
     params.forEach(function(x) {
         self.routeData[x.name] = x.value;
     });
-    for(var key in self.route) {
-        if (self.route.hasOwnProperty(key) && (key!=="url")) {
-            self.routeData[key] = self.route[key];
-        }
-    }
+    if (self.route.hasOwnProperty("controller")) { self.routeData["controller"] = self.route["controller"]; }
+    if (self.route.hasOwnProperty("action")) { self.routeData["action"] = self.route["action"]; }
     return true;
 };
 

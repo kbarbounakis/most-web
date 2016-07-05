@@ -176,7 +176,7 @@ HttpDataController.prototype.new = function (callback) {
             self.model.save(target, function(err)
             {
                 if (err) {
-                    callback(common.httpError(err));
+                    callback(common.HttpException.create(err));
                 }
                 else {
                     if (context.params.attr('returnUrl'))
@@ -209,7 +209,7 @@ HttpDataController.prototype.edit = function (callback) {
                     if (err) {
                         console.log(err);
                         console.log(err.stack);
-                        callback(common.httpError(err));
+                        callback(common.HttpException.create(err));
                     }
                     else {
                         if (context.params.attr('returnUrl'))
@@ -225,11 +225,10 @@ HttpDataController.prototype.edit = function (callback) {
             //get context param
             var target = context.params[self.model.name] || context.params.data;
             if (target) {
-                //todo::check if object exists
                 self.model.remove(target, function(err)
                 {
                     if (err) {
-                        callback(common.httpError(err));
+                        callback(common.HttpException.create(err));
                     }
                     else {
                         if (context.params.attr('returnUrl'))
@@ -261,7 +260,7 @@ HttpDataController.prototype.edit = function (callback) {
             if (filter) {
                 self.model.filter(filter, function(err, q) {
                     if (err) {
-                        callback(common.httpError(err));
+                        callback(common.HttpException.create(err));
                         return;
                     }
                     q.take(1, function (err, result) {
@@ -323,12 +322,12 @@ HttpDataController.prototype.schema = function (callback) {
             m.attributes.forEach(function(x) {
                 var mapping = self.model.inferMapping(x.name);
                 if (mapping)
-                    x.mapping = JSON.parse(JSON.stringify(mapping));;
+                    x.mapping = JSON.parse(JSON.stringify(mapping));
                 //delete private properties
                 delete x.value;
                 delete x.calculation;
             });
-            //prepape views and view fields
+            //prepare views and view fields
             if (m.views) {
                 m.views.forEach(function(view) {
                     if (view.fields) {
@@ -360,7 +359,7 @@ HttpDataController.prototype.schema = function (callback) {
     }).unhandle(function() {
         callback(new common.HttpMethodNotAllowed());
     });
-}
+};
 
 /**
  * Handles data object display (e.g. /user/1/show.html, /user/1/show.json etc)
@@ -387,7 +386,7 @@ HttpDataController.prototype.show = function (callback) {
             }
             self.model.filter(filter, function(err, q) {
                 if (err) {
-                    callback(common.httpError(err));
+                    callback(common.HttpException.create(err));
                     return;
                 }
                 q.take(1, function (err, result) {
@@ -414,7 +413,7 @@ HttpDataController.prototype.show = function (callback) {
     catch (e) {
         callback(e);
     }
-}
+};
 /**
  * Handles data object deletion (e.g. /user/1/remove.html, /user/1/remove.json etc)
  * @param {Function} callback
@@ -428,7 +427,7 @@ HttpDataController.prototype.remove = function (callback) {
                 self.model.remove(target, function(err)
                 {
                     if (err) {
-                        callback(common.httpError(err));
+                        callback(common.HttpException.create(err));
                     }
                     else {
                         if (context.params.attr('returnUrl'))
@@ -447,10 +446,10 @@ HttpDataController.prototype.remove = function (callback) {
     catch (e) {
         callback(common.httpError(e))
     }
-}
+};
 
 /**
- * @param {Function(Error,DataQueryable)} callback
+ * @param {Function} callback
  * @private
  */
 HttpDataController.prototype.filter = function (callback) {
@@ -462,12 +461,12 @@ HttpDataController.prototype.filter = function (callback) {
         return;
     }
 
-    var filter = params['$filter'],
-        select = params['$select'],
-        skip = params['$skip'] || 0,
-        orderBy = params['$orderby'] || params.attr('$order'),
-        groupBy = params.attr('$group') || params.attr('$groupby'),
-        expand = params.attr('$expand');
+    var filter = params.$filter,
+        select = params.$select,
+        skip = params.$skip || 0,
+        orderBy = params.$order || params.$orderby,
+        groupBy = params.$group || params.$groupby,
+        expand = params.$expand;
 
     self.model.filter(filter,
         /**
@@ -477,111 +476,46 @@ HttpDataController.prototype.filter = function (callback) {
          function (err, q) {
             try {
                 if (err) {
-                    callback(err);
+                    return callback(err);
                 }
                 else {
                     //set $groupby
                     if (groupBy) {
-                        var arr = groupBy.split(',');
-                        var fields = [];
-                        for (var i = 0; i < arr.length; i++) {
-                            var item = string(arr[i]).trim().toString();
-                            var field = self.model.field(item);
-                            if (field) {
-                                fields.push(field.name);
-                            }
-                            else if (/(\w+)\((.*?)\)/i.test(item)) {
-                                fields.push(q.fieldOf(item));
-                            }
-                            else if (/\//.test(item)) {
-                                fields.push(item);
-                            }
-                        }
-                        if (fields.length>0) {
-                            q.groupBy(fields);
-                        }
+                        q.groupBy.apply(q, groupBy.split(',').map(function(x) {
+                            return x.replace(/^\s+|\s+$/g, '');
+                        }));
                     }
                     //set $select
                     if (select) {
-                        var arr = select.split(',');
-                        var fields = [];
-                        for (var i = 0; i < arr.length; i++) {
-                            var item = string(arr[i]).trim().toString();
-                            var field = self.model.field(item);
-                            if (field) {
-                                fields.push(field.name);
-                            }
-                            else if (/(\w+)\((.*?)\)/i.test(item) || /^(\w+)\s+as\s+(.*?)$/i.test(item)) {
-                                fields.push(q.fieldOf(item));
-                            }
-                            else if (/\//.test(item)) {
-                                //pass nested field as string
-                                fields.push(item);
-                            }
-                        }
-                        if (fields.length>0) {
-                            q.select(fields);
-                        }
-                        else {
-                            //search for data view
-                            if (arr.length==1) {
-                                var view = self.model.dataviews(arr[0]);
-                                if (view) {
-                                    q.select(view.name);
-                                }
-                            }
-                        }
+                        q.select.apply(q, select.split(',').map(function(x) {
+                            return x.replace(/^\s+|\s+$/g, '');
+                        }));
                     }
                     //set $skip
+                    if (!/^\d+$/.test(skip)) {
+                        return callback(new common.HttpBadRequest("Skip may be a non-negative integer."))
+                    }
                     q.skip(skip);
                     //set $orderby
                     if (orderBy) {
-                        var arr = orderBy.split(',');
-                        for (var i = 0; i < arr.length; i++) {
-                            var item = string(arr[i]).trim().toString(), name = null, direction = 'asc';
-                            if (/ asc$/i.test(item)) {
-                                name=item.substr(0,item.length-4);
+                        orderBy.split(',').map(function(x) {
+                            return x.replace(/^\s+|\s+$/g, '');
+                        }).forEach(function(x) {
+                            if (/\s+desc$/i.test(x)) {
+                                q.orderByDescending(x.replace(/\s+desc$/i, ''));
                             }
-                            else if (/ desc$/i.test(item)) {
-                                direction = 'desc';
-                                name=item.substr(0,item.length-5);
+                            else if (/\s+asc/i.test(x)) {
+                                q.orderBy(x.replace(/\s+asc/i, ''));
                             }
-                            else if (!/\s/.test(item)) {
-                                name = item;
+                            else {
+                                q.orderBy(x);
                             }
-                            if (name) {
-                                var field = self.model.field(name);
-                                //validate model field
-                                if (field) {
-                                    if (direction=='desc')
-                                        q.orderByDescending(name);
-                                    else
-                                        q.orderBy(name);
-                                }
-                                //validate aggregate functions or associated field expression e.g. user/username
-                                else if (/(\w+)\((.*?)\)/i.test(name) || /\//.test(name)) {
-                                    if (direction=='desc')
-                                        q.orderByDescending(name);
-                                    else
-                                        q.orderBy(name);
-                                }
-                                else if (/\//.test(name)) {
-                                    if (direction=='desc')
-                                        q.orderByDescending(name);
-                                    else
-                                        q.orderBy(name);
-                                }
-
-                            }
-                        }
+                        });
                     }
                     if (expand) {
-                        if (expand.length>0) {
-                            expand.split(',').map(function(x) { return x.replace(/\s/g,''); }).forEach(function(x) {
-                                if (x.length)
-                                    q.expand(x.replace(/\s/g,''));
-                            });
-                        }
+                        q.expand.apply(q, expand.split(',').map(function(x) {
+                            return x.replace(/^\s+|\s+$/g, '');
+                        }));
                     }
                     //return
                     callback(null, q);
@@ -601,10 +535,9 @@ HttpDataController.prototype.index = function(callback)
 
     try {
         var self = this, context = self.context,
-            top = parseInt(self.context.params.$top),
+            top = parseInt(context.params.attr('$top')),
             take = top > 0 ? top : (top == -1 ? top : 25);
         var count = /^true$/ig.test(context.params.attr('$inlinecount')) || false,
-            expand = context.params.attr('$expand'),
             first = /^true$/ig.test(context.params.attr('$first')) || false,
             asArray = /^true$/ig.test(context.params.attr('$array')) || false;
         common.debug(context.request.url);
@@ -615,85 +548,60 @@ HttpDataController.prototype.index = function(callback)
                     return;
                 }
             }
-            self.filter(function(err, q) {
+            self.filter(
+                /**
+                 * @param {Error} err
+                 * @param {DataQueryable=} q
+                 */
+                function(err, q) {
                 try {
                     if (err) {
-                        callback(common.httpError(err));
+                        return callback(common.HttpException.create(err));
+                    }
+                    //apply as array parameter
+                    q.asArray(asArray);
+                    if (first) {
+                        return q.first().then(function(result) {
+                            return callback(null, self.result(result));
+                        }).catch(function(err) {
+                            return callback(common.HttpException.create(err));
+                        });
+                    }
+
+                    if (take<0) {
+                        return q.all().then(function(result) {
+                            if (count) {
+                                return callback(null, self.result({
+                                    records:result,
+                                    total:result.count
+                                }));
+                            }
+                            else {
+                                return callback(null, self.result(result));
+                            }
+                        }).catch(function(err) {
+                            return callback(common.HttpException.create(err));
+                        });
                     }
                     else {
-
-                        if (expand) {
-                            if (expand.length>0) {
-                                var arr = expand.split(',');
-                                arr.forEach(function(x) {
-                                    q.expand(x.replace(/\s/g,''));
-                                });
-                            }
-                        }
-                        //check $first context param
-                        if (first) {
-                            q.first(function(err, result) {
-                                if (err) {
-                                    callback(common.httpError(err));
-                                }
-                                else {
-                                    callback(null, self.result(result));
-                                }
-                            });
-                            return;
-                        }
-
-                        var q1 = null;
                         if (count) {
-                            q1 = q.clone();
-                        }
-                        //pass as array option
-                        q.asArray(asArray);
-                        if (take<0) {
-                            q.all(function(err, result)
-                            {
-                                if (err) {
-                                    callback(common.httpError(err));
-                                    return;
-                                }
-                                if (count) {
-                                    result = { records: (result || []) };
-                                    result.total = result.records.length;
-                                    callback(null, self.result(result));
-                                }
-                                else {
-                                    callback(null, self.result(result || []));
-                                }
+                            return q.take(take).list().then(function(result) {
+                                return callback(null, self.result(result));
+                            }).catch(function(err) {
+                                return callback(common.HttpException.create(err));
                             });
                         }
                         else {
-                            q.take(take, function(err, result)
-                            {
-                                if (err) {
-                                    callback(common.httpError(err));
-                                    return;
-                                }
-                                if (count) {
-                                    q1.count(function(err, total) {
-                                        if (err) {
-                                            callback(common.httpError(err));
-                                        }
-                                        else {
-                                            result = { total: total, records: (result || []) };
-                                            callback(null, self.result(result));
-                                        }
-                                    });
-                                }
-                                else {
-                                    callback(null, self.result(result || []));
-                                }
+                            return q.take(take).getItems().then(function(result) {
+                                return callback(null, self.result(result));
+                            }).catch(function(err) {
+                                return callback(common.HttpException.create(err));
                             });
                         }
-
                     }
                 }
                 catch (e) {
-                    callback(e);
+                    return callback(e);
                 }
             });
         }).handle(['POST', 'PUT'], function() {
@@ -712,7 +620,7 @@ HttpDataController.prototype.index = function(callback)
                 {
                     if (err) {
                         common.log(err);
-                        callback(common.httpError(err));
+                        callback(common.HttpException.create(err));
                     }
                     else {
                         callback(null, self.result(target));
@@ -738,7 +646,7 @@ HttpDataController.prototype.index = function(callback)
                 self.model.remove(target, function(err)
                 {
                     if (err) {
-                        callback(common.httpError(err));
+                        callback(common.HttpException.create(err));
                     }
                     else {
                         callback(null, self.result(target));

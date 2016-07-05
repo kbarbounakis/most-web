@@ -165,7 +165,7 @@ ViewHandler.prototype.mapRequest = function (context, callback) {
             return callback();
         }
         //query controller
-        var controllerName = currentRoute.routeData["controller"] || queryController(requestUri);
+        var controllerName = currentRoute["controller"] || currentRoute.routeData["controller"] || queryController(requestUri);
         if (typeof controllerName === 'undefined' || controllerName == null) {
             return callback();
         }
@@ -341,7 +341,7 @@ ViewHandler.prototype.processRequest = function (context, callback) {
              * try to find action
              * @type {String}
              */
-            var action = context.data['action'];
+            var action = context.request.routeData["action"];
             if (action) {
                 //execute action
                 var fn = controller[action];

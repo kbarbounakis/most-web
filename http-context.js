@@ -125,23 +125,15 @@ function HttpContext(httpRequest, httpResponse) {
         get: function () {
             if (data)
                 return data;
-            if (self.request == null) {
-                data = {};
-                return data;
-            }
-            else if (self.request.routeData == null) {
-                data = {};
-                return data;
-            }
-            else {
-                data = {};
+            data = { };
+            if (self.request && self.request.routeData) {
                 for(var key in self.request.routeData) {
                     if (self.request.routeData.hasOwnProperty(key)) {
                         data[key] = self.request.routeData[key];
                     }
                 }
-                return data;
             }
+            return data;
         }, configurable: false, enumerable: false
     });
     /**
@@ -159,7 +151,7 @@ function HttpContext(httpRequest, httpResponse) {
         }, configurable: false, enumerable: false
     });
 
-    var jq = null, ng = null, doc, self = this;
+    var jq = null, ng = null, doc;
     /**
      * @property {jQuery|HTMLElement|*} $ - Gets server jQuery module
      */
@@ -205,6 +197,7 @@ function HttpContext(httpRequest, httpResponse) {
         //call init() method
         this.init();
     }
+    
 
 }
 //todo: set HttpContext inheritance from configuration

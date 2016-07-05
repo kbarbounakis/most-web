@@ -41,8 +41,7 @@ JsonHandler.prototype.beginRequest = function(context, callback) {
                     if (request.body) {
                        //try parse
                         if (request.body instanceof Buffer) {
-                            var result = JSON.parse(request.body);
-                            context.params.data = result;
+                            context.params.data = JSON.parse(request.body);
                         }
                         else if (typeof request.body === 'object') {
                             context.params.data = request.body;

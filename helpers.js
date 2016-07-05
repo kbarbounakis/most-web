@@ -14,8 +14,7 @@
 var fs = require('fs'),
     ejs = require('ejs'),
     util = require('util'),
-    app = require('most-web'),
-    HttpViewContext = app.views.HttpViewContext;
+    HttpViewContext = require('./http-mvc').HttpViewContext;
 /**
  *
  * @param {String} name

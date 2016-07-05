@@ -16,7 +16,7 @@ exports.extend = function($) {
 
     $.fn.outerHTML = $.fn.outer = function () {
         return $(this).clone().wrap('<div></div>').parent().html();
-    }
+    };
 
     $.extend($.expr[':'],{
         required: function(a) {
