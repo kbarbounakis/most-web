@@ -758,7 +758,11 @@ HttpApplication.prototype.processRequest = function (context, callback) {
                                                                     }
                                                                 });
                                                             else {
-                                                                callback.call(context, new common.HttpNotFoundException());
+                                                                var er = new common.HttpNotFoundException();
+                                                                if (context.request && context.request.url) {
+                                                                    er.resource = context.request.url;
+                                                                }
+                                                                callback.call(context, er);
                                                             }
                                                         }
 

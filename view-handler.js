@@ -74,7 +74,6 @@ ViewHandler.queryControllerClass = function(controllerName, context, callback) {
                         var controllerType = controllerModel.type || 'data';
                         //try to find controller based on the model's type in controllers folder (e.g. /library-controller.js)
                         controllerPath = app.current.mapPath(util.format(ViewHandler.STR_CONTROLLER_RELPATH, controllerType));
-
                         fs.exists(controllerPath, function(exists) {
                            if (!exists) {
                                //get controller path according to related model's type (e.g ./data-controller)

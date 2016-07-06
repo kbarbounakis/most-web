@@ -513,6 +513,12 @@ HttpDataController.prototype.filter = function (callback) {
                         });
                     }
                     if (expand) {
+                        // var re = /(\w+)(\(.*?\)(,|$))?/ig;
+                        // var match = re.exec(expand);
+                        // while(match) {
+                        //     q.expand(match[1]);
+                        //     match = re.exec(expand);
+                        // }
                         q.expand.apply(q, expand.split(',').map(function(x) {
                             return x.replace(/^\s+|\s+$/g, '');
                         }));

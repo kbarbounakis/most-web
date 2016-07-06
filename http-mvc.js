@@ -536,7 +536,11 @@ HttpViewResult.prototype.execute = function(context, callback)
 
         }
         else {
-            callback.call(context, new common.HttpNotFoundException('View Not Found'));
+            var er = new common.HttpNotFoundException();
+            if (context.request && context.request.url) {
+                er.resource = context.request.url;
+            }
+            callback.call(context, er);
         }
     });
 
