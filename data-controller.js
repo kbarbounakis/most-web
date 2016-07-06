@@ -463,6 +463,7 @@ HttpDataController.prototype.filter = function (callback) {
 
     var filter = params.$filter,
         select = params.$select,
+        search = params.$search,
         skip = params.$skip || 0,
         orderBy = params.$order || params.$orderby,
         groupBy = params.$group || params.$groupby,
@@ -479,6 +480,9 @@ HttpDataController.prototype.filter = function (callback) {
                     return callback(err);
                 }
                 else {
+                    if ((typeof search === 'string') && (search.length>0)) {
+                        q.search(search);
+                    }
                     //set $groupby
                     if (groupBy) {
                         q.groupBy.apply(q, groupBy.split(',').map(function(x) {
