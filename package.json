@@ -36,7 +36,7 @@
     "formidable": "1.0.14",
     "moment": "~2.8.4",
     "most-array": "~1.0.1",
-    "most-data": "~0.2.1",
+    "most-data": "~1.8.0",
     "most-xml": "~0.3.0",
     "node-cache": "^1.1.0",
     "q": "^1.4.1",
