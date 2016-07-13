@@ -517,15 +517,11 @@ HttpDataController.prototype.filter = function (callback) {
                         });
                     }
                     if (expand) {
-                        // var re = /(\w+)(\(.*?\)(,|$))?/ig;
-                        // var match = re.exec(expand);
-                        // while(match) {
-                        //     q.expand(match[1]);
-                        //     match = re.exec(expand);
-                        // }
-                        q.expand.apply(q, expand.split(',').map(function(x) {
-                            return x.replace(/^\s+|\s+$/g, '');
-                        }));
+                        var resolver = require("most-data/data-expand-resolver");
+                        var matches = resolver.testExpandExpression(expand);
+                        if (matches && matches.length>0) {
+                            q.expand.apply(q, matches);
+                        }
                     }
                     //return
                     callback(null, q);
