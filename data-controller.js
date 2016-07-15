@@ -465,6 +465,7 @@ HttpDataController.prototype.filter = function (callback) {
         select = params.$select,
         search = params.$search,
         skip = params.$skip || 0,
+        levels = parseInt(params.$levels),
         orderBy = params.$order || params.$orderby,
         groupBy = params.$group || params.$groupby,
         expand = params.$expand;
@@ -498,6 +499,10 @@ HttpDataController.prototype.filter = function (callback) {
                     //set $skip
                     if (!/^\d+$/.test(skip)) {
                         return callback(new common.HttpBadRequest("Skip may be a non-negative integer."))
+                    }
+                    //set expandable levels
+                    if (!isNaN(levels)) {
+                        q.levels(levels);
                     }
                     q.skip(skip);
                     //set $orderby
