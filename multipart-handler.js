@@ -12,6 +12,23 @@
  * @ignore
  */
 var formidable = require('formidable'), util = require('util');
+
+if (process.version>="v6.0.0") {
+    var multipart_parser = require('formidable/lib/multipart_parser'),
+        MultipartParser = multipart_parser.MultipartParser;
+    MultipartParser.prototype.initWithBoundary = function(str) {
+        this.boundary = new Buffer(str.length+4);
+        this.boundary.write('\r\n--', 0, 4 , 'ascii');
+        this.boundary.write(str, 4, str.length, 'ascii');
+        this.lookbehind = new Buffer(this.boundary.length+8);
+        this.state = multipart_parser.START;
+        this.boundaryChars = {};
+        for (var i = 0; i < this.boundary.length; i++) {
+            this.boundaryChars[this.boundary[i]] = true;
+        }
+    };
+}
+
 function MultipartHandler() {
 
 }
