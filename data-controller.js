@@ -584,7 +584,7 @@ HttpDataController.prototype.index = function(callback)
                             if (count) {
                                 return callback(null, self.result({
                                     records:result,
-                                    total:result.count
+                                    total:result.length
                                 }));
                             }
                             else {
