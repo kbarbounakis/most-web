@@ -171,7 +171,7 @@ function extend(origin, expr, value, options) {
             throw new Error('Invalid object property notation. Expected [name]');
         }
     }
-    else if (/^\w+$/.test(expr)) {
+    else if (/^[\w\-]*$/.test(expr)) {
         if (options.convertValues)
             origin[expr] = UnknownValue.convert(value);
         else
