@@ -657,6 +657,22 @@ var common = {
             sha1.update(JSON.stringify(value));
         }
         return sha1.digest('hex');
+    },
+    sha256 : function(value) {
+        if (typeof value === 'undefined' || value == null) {
+            return;
+        }
+        var sha256 = crypto.createHash('sha256');
+        if (typeof value === 'string') {
+            sha256.update(value);
+        }
+        else if (value instanceof Date) {
+            sha256.update(value.toUTCString());
+        }
+        else {
+            sha256.update(JSON.stringify(value));
+        }
+        return sha256.digest('hex');
     }
 };
 
