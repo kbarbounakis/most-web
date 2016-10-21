@@ -611,7 +611,7 @@ HttpApplication.prototype.resolveMime = function (request) {
 /**
  * Encrypts the given data
  * */
-HttpApplication.prototype.encypt = function (data)
+HttpApplication.prototype.encrypt = function (data)
 {
     if (typeof data === 'undefined' || data==null)
         return null;
@@ -662,7 +662,7 @@ HttpApplication.prototype.setAuthCookie = function (context, username, options)
     }
     var settings = this.config.settings ? (this.config.settings.auth || { }) : { } ;
     settings.name = settings.name || '.MAUTH';
-    context.response.setHeader('Set-Cookie',settings.name.concat('=', this.encypt(value)) + ';path=/');
+    context.response.setHeader('Set-Cookie',settings.name.concat('=', this.encrypt(value)) + ';path=/');
 };
 
 /**

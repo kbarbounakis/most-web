@@ -879,7 +879,7 @@ HttpViewContext.HtmlViewHelper = function($view)
     return {
     antiforgery: function() {
         //create token
-        var context = $view.context,  value = context.application.encypt(JSON.stringify({ id: Math.floor(Math.random() * 1000000), url:context.request.url, date:new Date() }));
+        var context = $view.context,  value = context.application.encrypt(JSON.stringify({ id: Math.floor(Math.random() * 1000000), url:context.request.url, date:new Date() }));
         //try to set cookie
         context.response.setHeader('Set-Cookie','.CSRF='.concat(value));
         return $view.writer.writeAttribute('type', 'hidden')
@@ -931,7 +931,7 @@ function HtmlViewHelper(view) {
 HtmlViewHelper.prototype.antiforgery = function() {
     var $view = this.parent;
     //create token
-    var context = $view.context,  value = context.application.encypt(JSON.stringify({ id: Math.floor(Math.random() * 1000000), url:context.request.url, date:new Date() }));
+    var context = $view.context,  value = context.application.encrypt(JSON.stringify({ id: Math.floor(Math.random() * 1000000), url:context.request.url, date:new Date() }));
     //try to set cookie
     context.response.setHeader('Set-Cookie','.CSRF='.concat(value));
     return $view.writer.writeAttribute('type', 'hidden')
