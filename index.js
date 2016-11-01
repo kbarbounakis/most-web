@@ -653,16 +653,23 @@ HttpApplication.prototype.decrypt = function (data)
  */
 HttpApplication.prototype.setAuthCookie = function (context, username, options)
 {
-    var defaultOptions = { user:username, dateCreated:new Date()}, value;
-    if (typeof options === 'object') {
+    var defaultOptions = { user:username, dateCreated:new Date()}, value, expires;
+    if (typeof options !== 'undefined' && options != null) {
         value = JSON.stringify(util._extend(options, defaultOptions));
+        if (util.isDate(options.expires)) {
+            expires = options.expires.toUTCString();
+        }
     }
     else {
         value = JSON.stringify(defaultOptions);
     }
     var settings = this.config.settings ? (this.config.settings.auth || { }) : { } ;
     settings.name = settings.name || '.MAUTH';
-    context.response.setHeader('Set-Cookie',settings.name.concat('=', this.encrypt(value)) + ';path=/');
+    var str = settings.name.concat('=', this.encrypt(value)) + ';path=/';
+    if (typeof expires === 'string') {
+        str +=';expires=' + expires;
+    }
+    context.response.setHeader('Set-Cookie',str);
 };
 
 /**
