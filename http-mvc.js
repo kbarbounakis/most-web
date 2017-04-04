@@ -47,7 +47,7 @@ HttpResult.prototype.execute = function(context, callback) {
     callback = callback || function() {};
     try {
         var response = context.response;
-        if (typeof this.data === 'undefined' || this.data == null) {
+        if (typeof this.data === 'undefined' || this.data === null) {
             response.writeHead(204);
             return callback.call(context);
         }

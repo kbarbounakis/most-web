@@ -1,4 +1,7 @@
 /**
+ * jshint es5:true
+ */
+/**
  * MOST Web Framework
  * A JavaScript Web Framework
  * http://themost.io
@@ -22,6 +25,7 @@ var app = require('./index'),
     route = require('./http-route'),
     xml = require('most-xml'),
     path=require('path'),
+    _ = require('lodash'),
     S = require('string');
 /**
  * @class ViewHandler
@@ -57,7 +61,7 @@ ViewHandler.STR_CONTROLLER_RELPATH = '/controllers/%s-controller.js';
 
 ViewHandler.queryControllerClass = function(controllerName, context, callback) {
 
-    if (typeof controllerName === 'undefined' || controllerName==null) {
+    if (typeof controllerName === 'undefined' || controllerName===null) {
         callback();
     }
     else {
@@ -343,18 +347,33 @@ ViewHandler.prototype.processRequest = function (context, callback) {
             var action = context.request.routeData["action"];
             if (action) {
                 //execute action
-                var fn = controller[action];
-                if (typeof fn !== 'function') {
-                    fn = controller[S(action).camelize().toString()];
-                    if (typeof fn !== 'function')
-                        fn = controller.action;
+                var fn, useHttpMethodNamingConvention = false;
+                if (controller.constructor['httpController']) {
+                    fn = queryControllerAction(controller, action);
+                    if (typeof fn === 'function') {
+                        useHttpMethodNamingConvention = true;
+                    }
+                }
+                else {
+                    fn = controller[action];
+                    if (typeof fn !== 'function') {
+                        fn = controller[_.camelCase(action)];
+                    }
                 }
                 if (typeof fn !== 'function') {
-                    return callback(new app.common.HttpNotFoundException());
+                    fn = controller.action;
                 }
                 //enumerate params
                 //var params = common.getFunctionParams(fn);
                 var params = [];
+                if (useHttpMethodNamingConvention) {
+                    return fn.apply(controller, params).then(function(result) {
+                        //execute http result
+                        return result.execute(context, callback);
+                    }).catch(function(err) {
+                        return callback.bind(context)(err);
+                    });
+                }
                 /**
                  * @type HttpResult
                  * */
@@ -365,12 +384,11 @@ ViewHandler.prototype.processRequest = function (context, callback) {
                     }
                     else {
                         //execute http result
-                        result.execute(context, callback);
+                        return result.execute(context, callback);
                     }
                 });
                 //invoke controller method
-                fn.apply(controller, params);
-                return;
+                return fn.apply(controller, params);
             }
         }
         callback.call(context);
@@ -407,6 +425,61 @@ function queryRoute(requestUri) {
         throw e;
     }
 }
+/**
+ * @function
+ * @private
+ * @param {HttpController|*} controller
+ * @param {string} action
+ * @returns {boolean}
+ */
+function isValidControllerAction(controller, action) {
+    var httpMethodDecorator = _.camelCase('http-' + controller.context.request.method);
+    if (typeof controller[action] === 'function') {
+        //get httpAction decorator
+        if ((typeof controller[action].httpAction === 'undefined') ||
+            (controller[action].httpAction===action)) {
+            //and supports current request method (see http decorators)
+            if (controller[action][httpMethodDecorator]) {
+                //return this action
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * @function
+ * @private
+ * @param {HttpController|*} controller
+ * @param {string} action
+ * @returns {Function}
+ */
+function queryControllerAction(controller, action) {
+    var httpMethodDecorator = _.camelCase('http-' + controller.context.request.method),
+         method = _.camelCase(action);
+    var controllerPrototype = Object.getPrototypeOf(controller);
+    if (controllerPrototype) {
+        //query controller methods that support current http request
+        const protoActionMethods = _.filter(Object.getOwnPropertyNames(controllerPrototype), function(x) {
+            return (typeof controller[x] === 'function')
+                && (controller[x].httpAction === action)
+                && (controller[x][httpMethodDecorator] === true);
+        });
+        //if an action was found for the given criteria
+        if (protoActionMethods.length===1) {
+            return controller[protoActionMethods[0]];
+        }
+    }
+    //if an action with the given name is a method of current controller
+    if (isValidControllerAction(controller, action)) {
+        return controller[action];
+    }
+    //if a camel cased action with the given name is a method of current controller
+    if (isValidControllerAction(controller, method)) {
+        return controller[method];
+    }
+}
 
 /**
  * Gets the controller of the given url
@@ -421,7 +494,7 @@ function queryController(requestUri) {
         var segments = requestUri.pathname.split('/');
         //put an exception for root controller
         //maybe this is unnecessary exception but we need to search for root controller e.g. /index.html, /about.html
-        if (segments.length == 2)
+        if (segments.length === 2)
             return 'root';
         else
         //e.g /pages/about where segments are ['','pages','about']

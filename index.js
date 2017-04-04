@@ -22,6 +22,7 @@ var common = require('./common'),
     da = require('most-data'),
     querystring = require('querystring'),
     HttpContext= require('./http-context').HttpContext,
+    decorators = require('./decorators'),
     crypto = require('crypto');
 
 /**
@@ -518,11 +519,13 @@ HttpApplication.prototype.init = function () {
 
 /**
  * Returns the path of a physical file based on a given URL.
+ * @param {string} s
  */
 HttpApplication.prototype.mapPath = function (s) {
     var uri = url.parse(s).pathname;
     return path.join(this.executionPath, uri);
 };
+
 /**
  * Resolves ETag header for the given file. If the specifed does not exist or is invalid returns null.
  * @param {string=} file - A string that represents the file we want to query
@@ -1563,221 +1566,225 @@ function httpApplicationErrors(application) {
     }
 }
 
+var web = { };
 
-var web = {
-    HttpApplication: HttpApplication,
-    HttpContext: HttpContext,
-    /**
-     * @type HttpApplication
-     * */
-    current: undefined,
-    /**
-     * Most Web Framework Express Parser
-     * @param {Object=} options
-     */
-    runtime: function(options) {
-        var self = this;
-        return function runtimeParser(req, res, next) {
-            //create context
-            var ctx = self.current.createContext(req,res);
-            ctx.request.on('close', function() {
-                //client was disconnected abnormally
-                //finalize data context
-                if (typeof ctx !== 'undefined' && ctx !=null) {
-                    ctx.finalize(function() {
-                        if (ctx.response) {
-                            //if response is alive
-                            if (ctx.response.finished == false)
-                                //end response
-                                ctx.response.end();
-                        }
-                    });
-                }
-            });
-            //process request
-            self.current.processRequest(ctx, function(err) {
-                if (err) {
-                    ctx.finalize(function() {
-                        next(err);
-                    });
-                }
-                else {
-                    ctx.finalize(function() {
-                        ctx.response.end();
-                    });
-                }
-            });
-        };
-    },
-    /**
-     * Expression handler for Access Denied HTTP errors (401).
-     * @param {Object=} options
-     */
-    unauthorized: function(options) {
-        return function(err, req, res, next)
-        {
-            try {
-                if (err.status==401)  {
-                    if (/text\/html/g.test(req.get('accept'))) {
-                        if (web.current.config.settings) {
-                            if (web.current.config.settings.auth) {
-                                var page = web.current.config.settings.auth.loginPage || '/login.html';
-                                res.set('Location', page.concat('?returnUrl=', encodeURIComponent(req.url)));
-                                res.status(302).end();
-                                return;
-                            }
+web.HttpApplication = HttpApplication;
+web.HttpContext = HttpContext;
+/**
+ * @type {HttpApplication}
+ */
+web.current = undefined;
+/**
+ * Most Web Framework Express Parser
+ * @param {*=} options
+ */
+web.runtime = function(options) {
+    var self = this;
+    return function runtimeParser(req, res, next) {
+        //create context
+        var ctx = self.current.createContext(req,res);
+        ctx.request.on('close', function() {
+            //client was disconnected abnormally
+            //finalize data context
+            if (typeof ctx !== 'undefined' && ctx !=null) {
+                ctx.finalize(function() {
+                    if (ctx.response) {
+                        //if response is alive
+                        if (ctx.response.finished == false)
+                        //end response
+                            ctx.response.end();
+                    }
+                });
+            }
+        });
+        //process request
+        self.current.processRequest(ctx, function(err) {
+            if (err) {
+                ctx.finalize(function() {
+                    next(err);
+                });
+            }
+            else {
+                ctx.finalize(function() {
+                    ctx.response.end();
+                });
+            }
+        });
+    };
+};
+
+/**
+ * Expression handler for Access Denied HTTP errors (401).
+ * @param {*=} options
+ */
+web.unauthorized = function(options) {
+    return function(err, req, res, next)
+    {
+        try {
+            if (err.status==401)  {
+                if (/text\/html/g.test(req.get('accept'))) {
+                    if (web.current.config.settings) {
+                        if (web.current.config.settings.auth) {
+                            var page = web.current.config.settings.auth.loginPage || '/login.html';
+                            res.set('Location', page.concat('?returnUrl=', encodeURIComponent(req.url)));
+                            res.status(302).end();
+                            return;
                         }
                     }
                 }
+            }
+            next(err);
+        }
+        catch(e) {
+            console.log(e);
+            next(err);
+        }
+    };
+};
+/**
+ * Expression handler for HTTP errors.
+ */
+web.error = function() {
+    return function(err, request, response, next)
+    {
+        try {
+            var ejs = require('ejs');
+            if (common.isNullOrUndefined(response) || common.isNullOrUndefined(request)) {
                 next(err);
             }
-            catch(e) {
-                console.log(e);
+            if (!/text\/html/g.test(request.get('accept'))) {
                 next(err);
             }
-        };
-    },
-    /**
-     * Expression handler for HTTP errors.
-     * @param {Object=} options
-     */
-    error: function() {
-        return function(err, request, response, next)
-        {
-            try {
-                var ejs = require('ejs');
-                if (common.isNullOrUndefined(response) || common.isNullOrUndefined(request)) {
+            else {
+                if (response._headerSent) {
                     next(err);
+                    return;
                 }
-                if (!/text\/html/g.test(request.get('accept'))) {
-                    next(err);
-                }
-                else {
-                    if (response._headerSent) {
+                fs.readFile(path.join(__dirname, './http-error.html.ejs'), 'utf8', function (readErr, data) {
+                    if (readErr) {
+                        //log process error
+                        common.log(readErr);
                         next(err);
                         return;
                     }
-                    fs.readFile(path.join(__dirname, './http-error.html.ejs'), 'utf8', function (readErr, data) {
-                        if (readErr) {
-                            //log process error
-                            common.log(readErr);
-                            next(err);
-                            return;
+                    //compile data
+                    var str;
+                    try {
+                        if (err instanceof common.HttpException) {
+                            str = ejs.render(data, { error:err });
                         }
-                        //compile data
-                        var str;
-                        try {
-                            if (err instanceof common.HttpException) {
-                                str = ejs.render(data, { error:err });
-                            }
-                            else {
-                                var httpErr = new common.HttpException(500, null, err.message);
-                                httpErr.stack = err.stack;
-                                str = ejs.render(data, {error: httpErr});
-                            }
+                        else {
+                            var httpErr = new common.HttpException(500, null, err.message);
+                            httpErr.stack = err.stack;
+                            str = ejs.render(data, {error: httpErr});
                         }
-                        catch (e) {
-                            common.log(e);
-                            next(err);
-                            return;
-                        }
-                        //write status header
-                        response.writeHead(err.status || 500 , { "Content-Type": "text/html" });
-                        response.write(str);
-                        response.end();
-                    });
-                }
+                    }
+                    catch (e) {
+                        common.log(e);
+                        next(err);
+                        return;
+                    }
+                    //write status header
+                    response.writeHead(err.status || 500 , { "Content-Type": "text/html" });
+                    response.write(str);
+                    response.end();
+                });
             }
-            catch(e) {
-                console.log(e);
-                next(err);
-            }
-        };
-    },
-    controllers: {
+        }
+        catch(e) {
+            console.log(e);
+            next(err);
+        }
+    };
+};
+
+web.controllers = {
         HttpController: mvc.HttpController,
         HttpBaseController: require('./base-controller'),
         HttpDataController: require('./data-controller'),
         HttpLookupController: require('./lookup-controller')
-    },
-    views: {
-        /**
-         * Creates an empty HTTP response.
-         * @returns {HttpEmptyResult}
-         */
-        createEmptyResult: function () {
-            return new mvc.HttpEmptyResult();
-        },
-        /**
-         * Creates a basic HTTP response with the data provided
-         * @param s {string}
-         * @returns {HttpContentResult}
-         */
-        createContentResult: function (s) {
-            return new mvc.HttpContentResult(s);
-        },
-        /**
-         * Creates a new HTTP view context that is going to be used in view controllers
-         * @param context {HttpContext=} - The current HTTP context
-         * @returns {HttpViewContext} - The newly create HTTP view context
-         */
-        createViewContext: function (context) {
-            return new mvc.HttpViewContext(context);
-        },
-        /**
-         * Creates a JSON response with the given data
-         * @param data
-         * @returns {HttpJsonResult}
-         */
-        createJsonResult: function (data) {
-            return new mvc.HttpJsonResult(data);
-        },
-        /**
-         * Creates a HTTP redirect to given url.
-         * @param url
-         * @returns {HttpRedirectResult}
-         */
-        createRedirectResult: function (url) {
-            return new mvc.HttpRedirectResult(url);
-        },
-        /**
-         * Creates an XML response with the data provided.
-         * @param data
-         * @returns {HttpXmlResult}
-         */
-        createXmlResult: function (data) {
-            return new mvc.HttpXmlResult(data);
-        },
-        /**
-         * Creates an HTML response with the data provided.
-         * @param data
-         * @returns {HttpViewResult}
-         */
-        createViewResult: function (name, data) {
-            return new mvc.HttpViewResult(name, data);
-        },
-        /**
-         * Inherit the prototype methods from HttpController into the given class
-         * @param {function} ctor Constructor function which needs to inherit the HttpController
-         */
-        inheritsController: function (ctor) {
-            util.inherits(ctor, mvc.HttpController);
-        },
-        HttpController: mvc.HttpController,
-        HttpViewContext:mvc.HttpViewContext
-    },
-    html: html,
-    mvc: mvc,
-    common: common,
-    files: files
 };
+
+web.views = {
+    /**
+     * Creates an empty HTTP response.
+     * @returns {HttpEmptyResult}
+     */
+    createEmptyResult: function () {
+        return new mvc.HttpEmptyResult();
+    },
+    /**
+     * Creates a basic HTTP response with the data provided
+     * @param s {string}
+     * @returns {HttpContentResult}
+     */
+    createContentResult: function (s) {
+        return new mvc.HttpContentResult(s);
+    },
+    /**
+     * Creates a new HTTP view context that is going to be used in view controllers
+     * @param context {HttpContext=} - The current HTTP context
+     * @returns {HttpViewContext} - The newly create HTTP view context
+     */
+    createViewContext: function (context) {
+        return new mvc.HttpViewContext(context);
+    },
+    /**
+     * Creates a JSON response with the given data
+     * @param data
+     * @returns {HttpJsonResult}
+     */
+    createJsonResult: function (data) {
+        return new mvc.HttpJsonResult(data);
+    },
+    /**
+     * Creates a HTTP redirect to given url.
+     * @param url
+     * @returns {HttpRedirectResult}
+     */
+    createRedirectResult: function (url) {
+        return new mvc.HttpRedirectResult(url);
+    },
+    /**
+     * Creates an XML response with the data provided.
+     * @param data
+     * @returns {HttpXmlResult}
+     */
+    createXmlResult: function (data) {
+        return new mvc.HttpXmlResult(data);
+    },
+    /**
+     * Creates an HTML response with the data provided.
+     * @param data
+     * @returns {HttpViewResult}
+     */
+    createViewResult: function (name, data) {
+        return new mvc.HttpViewResult(name, data);
+    },
+    /**
+     * Inherit the prototype methods from HttpController into the given class
+     * @param {function} ctor Constructor function which needs to inherit the HttpController
+     */
+    inheritsController: function (ctor) {
+        util.inherits(ctor, mvc.HttpController);
+    },
+    HttpController: mvc.HttpController,
+        HttpViewContext:mvc.HttpViewContext
+};
+
+web.html = html;
+web.mvc = mvc;
+web.common = common;
+web.files= files;
+web.decorators = decorators;
+
 /**
  * @type HttpApplication
  * @private
  */
 var __current__ = null;
 
-if (typeof global !== 'undefined' && global!=null) {
+if (typeof global !== 'undefined' && global!==null) {
     if (typeof global.application === 'undefined') {
         //set current application as global property (globals.application)
         Object.defineProperty(global, 'application', {
@@ -1792,12 +1799,12 @@ if (typeof global !== 'undefined' && global!=null) {
 
 Object.defineProperty(web, 'current', {
     get: function () {
-        if (__current__ != null)
+        if (__current__ !== null)
             return __current__;
         //instantiate HTTP application
         __current__ = new HttpApplication();
         //initialize current application
-        if (__current__.config == null)
+        if (__current__.config === null)
             __current__.init();
         //extend current application
         __current__.extend();
@@ -1808,6 +1815,4 @@ Object.defineProperty(web, 'current', {
     enumerable: false
 });
 
-if (typeof exports !== 'undefined') {
-    module.exports = web;
-}
+module.exports = web;
