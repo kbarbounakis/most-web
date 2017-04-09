@@ -20,6 +20,7 @@ var common = require('./common'),
     da = require("most-data"),
     fs = require('fs'),
     crypto = require('crypto'),
+    Q = require('q'),
     async = require('async');
 /**
  * @class
@@ -390,13 +391,13 @@ function isAbsolute(p) {
  * Represents a class that is used to render a view.
  * @class
  * @param {string=} name - The name of the view.
- * @param {Array=} data - The data that are going to be used to render the view.
+ * @param {*=} data - The data that are going to be used to render the view.
  * @augments HttpResult
  */
 function HttpViewResult(name, data)
 {
     this.name = name;
-    this.data = data==undefined? []: data;
+    this.data = data===undefined? []: data;
     this.contentType = 'text/html;charset=utf-8';
     this.contentEncoding = 'utf8';
 }
@@ -617,7 +618,7 @@ HttpController.prototype.htm = HttpController.prototype.html;
 HttpController.prototype.js = function(data)
 {
     return new HttpJavascriptResult(data);
-}
+};
 
 /**
  * Creates a view result object that represents a client javascript object.
@@ -632,9 +633,9 @@ HttpController.prototype.jsvar = function(name, obj)
 {
     if (typeof name !== 'string')
         return new HttpEmptyResult();
-    if (name.length==0)
+    if (name.length===0)
         return new HttpEmptyResult();
-    if (typeof obj === 'undefined' || obj == null)
+    if (typeof obj === 'undefined' || obj === null)
         return new HttpJavascriptResult(name.concat(' = null;'));
     else if (obj instanceof Date)
         return new HttpJavascriptResult(name.concat(' = new Date(', obj.valueOf(), ');'));
@@ -651,8 +652,14 @@ HttpController.prototype.jsvar = function(name, obj)
  */
 HttpController.prototype.action = function(callback)
 {
-    callback(null, this.view());
-}
+    var self = this;
+    self.context.handleGet(function() {
+        return callback(null, self.view());
+    }).unhandle(function() {
+        return callback(new common.HttpMethodNotAllowed());
+    });
+
+};
 
 /**
  * Creates a content result object by using a string.
@@ -661,7 +668,7 @@ HttpController.prototype.action = function(callback)
 HttpController.prototype.content = function(content)
 {
      return new HttpContentResult(content);
-}
+};
 /**
  * Creates a JSON result object by using the specified data.
  * @returns HttpJsonResult
@@ -669,7 +676,7 @@ HttpController.prototype.content = function(content)
 HttpController.prototype.json = function(data)
 {
     return new HttpJsonResult(data);
-}
+};
 
 /**
  * Creates a XML result object by using the specified data.
@@ -678,7 +685,7 @@ HttpController.prototype.json = function(data)
 HttpController.prototype.xml = function(data)
 {
     return new HttpXmlResult(data);
-}
+};
 
 /**
  * Creates a binary file result object by using the specified path.
@@ -689,7 +696,7 @@ HttpController.prototype.xml = function(data)
 HttpController.prototype.file = function(physicalPath, fileName)
 {
     return new HttpFileResult(physicalPath, fileName);
-}
+};
 
 /**
  * Creates a redirect result object that redirects to the specified URL.
@@ -698,7 +705,7 @@ HttpController.prototype.file = function(physicalPath, fileName)
 HttpController.prototype.redirect = function(url)
 {
     return new HttpRedirectResult(url);
-}
+};
 
 /**
  * Creates an empty result object.
@@ -707,7 +714,25 @@ HttpController.prototype.redirect = function(url)
 HttpController.prototype.empty = function()
 {
     return new HttpEmptyResult();
-}
+};
+
+/**
+ * Promise resolver function
+ * @callback PromiseResolverFunction
+ * @param {Function} resolve
+ * @param {Function=} reject
+ * @param {Function=} notify
+ */
+
+/**
+ * Returns a promise by executing the given resolver function
+ * @param {PromiseResolverFunction} resolver
+ * @returns {Promise|*}
+ * */
+HttpController.prototype.toPromise = function(resolver)
+{
+    return Q.promise(resolver.bind(this));
+};
 /**
  * Abstract view engine class
  * @class HttpViewEngine
@@ -724,10 +749,11 @@ util.inherits(HttpViewEngine, da.types.EventEmitter2);
  * Renders the specified view with the options provided
  * @param url
  * @param options
+ * @param {Function} callback
  */
 HttpViewEngine.prototype.render = function(url, options, callback) {
     //
-}
+};
 
 
 /**
@@ -958,21 +984,22 @@ HtmlViewHelper.prototype.lang = function() {
     return 'en';
 };
 
-var mvc = {
-    HttpResult : HttpResult,
-    HttpContentResult : HttpContentResult,
-    HttpJsonResult:HttpJsonResult,
-    HttpEmptyResult:HttpEmptyResult,
-    HttpXmlResult:HttpXmlResult,
-    HttpRedirectResult:HttpRedirectResult,
-    HttpFileResult:HttpFileResult,
-    HttpViewResult:HttpViewResult,
-    HttpViewContext:HttpViewContext,
-    HtmlViewHelper:HtmlViewHelper,
-    HttpController:HttpController,
-    HttpViewEngine: HttpViewEngine,
-    HttpViewEngineReference: HttpViewEngineReference
-};
+var mvc = { };
+
+mvc.HttpResult  = HttpResult;
+mvc.HttpContentResult  = HttpContentResult;
+mvc.HttpJsonResult =HttpJsonResult;
+mvc.HttpEmptyResult =HttpEmptyResult;
+mvc.HttpXmlResult =HttpXmlResult;
+mvc.HttpRedirectResult =HttpRedirectResult;
+mvc.HttpFileResult =HttpFileResult;
+mvc.HttpViewResult =HttpViewResult;
+mvc.HttpViewContext =HttpViewContext;
+mvc.HtmlViewHelper =HtmlViewHelper;
+mvc.HttpController =HttpController;
+mvc.HttpViewEngine = HttpViewEngine;
+mvc.HttpViewEngineReference = HttpViewEngineReference;
+
 
 if (typeof exports !== 'undefined')
 {

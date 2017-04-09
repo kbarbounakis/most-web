@@ -1,4 +1,4 @@
-
+var _ = require('lodash');
 
 function httpController() {
     return function (target, key, descriptor) {
@@ -89,6 +89,62 @@ function httpAction(name) {
         return descriptor;
     }
 }
+/**
+ *
+ * @param {string} name
+ * @param {string} alias
+ * @returns {Function}
+ */
+function httpParamAlias(name, alias) {
+    if (typeof name !== 'string') {
+        throw new TypeError('Parameter name must be a string');
+    }
+    if (typeof alias !== 'string') {
+        throw new TypeError('Parameter alias must be a string');
+    }
+    return function (target, key, descriptor) {
+        if (typeof descriptor.value !== 'function') {
+            throw new Error('Decorator is not valid on this declaration type.');
+        }
+        descriptor.value.httpParamAlias = descriptor.value.httpParamAlias || { };
+        descriptor.value.httpParamAlias[name] = alias;
+        return descriptor;
+    }
+}
+/**
+ * @class
+ * @abstract
+ * @property {string} name
+ * @property {string} type
+ * @property {RegExp|string} pattern
+ * @property {date|number|*} minValue
+ * @property {date|number|*} maxValue
+ * @property {number} minLength
+ * @property {number} maxLength
+ * @property {boolean} required
+ * @constructor
+ */
+function HttpParamAttributeOptions() {
+    "use strict";
+}
+
+/**
+ * @param {HttpParamAttributeOptions=} options
+ * @returns {Function}
+ */
+function httpParam(options) {
+    if (typeof options !== 'object') { throw new TypeError('Parameter options must be an object'); }
+    if (typeof options.name !== 'string') { throw new TypeError('Parameter name must be a string'); }
+    return function (target, key, descriptor) {
+        if (typeof descriptor.value !== 'function') {
+            throw new Error('Decorator is not valid on this declaration type.');
+        }
+        descriptor.value.httpParam = descriptor.value.httpParam || { };
+        descriptor.value.httpParam[options.name] = _.extend({"type":"Text"}, options);
+        return descriptor;
+    }
+}
+
 
 module.exports.httpGet = httpGet;
 module.exports.httpAny = httpAny;
@@ -99,3 +155,5 @@ module.exports.httpOptions = httpOptions;
 module.exports.httpHead = httpHead;
 module.exports.httpAction = httpAction;
 module.exports.httpController = httpController;
+module.exports.httpParamAlias = httpParamAlias;
+module.exports.httpParam = httpParam;

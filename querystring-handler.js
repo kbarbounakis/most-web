@@ -29,7 +29,19 @@ function caseInsensitiveAttribute(name) {
         if (p)
             return this[p];
     }
-    return null;
+}
+
+function caseInsensitiveHasAttribute(name) {
+    if (typeof name === 'string') {
+        if (this[name])
+            return true;
+        //otherwise make a case insensitive search
+        var re = new RegExp('^' + name + '$','i');
+        var p = Object.keys(this).filter(function(x) { return re.test(x); })[0];
+        if (p)
+            return true;
+    }
+    return false;
 }
 
 function QuerystringHandler() {
@@ -48,6 +60,7 @@ QuerystringHandler.prototype.beginRequest = function(context, callback) {
         context.params = context.params || {};
         //apply case insensitivity search in params object
         context.params.attr = caseInsensitiveAttribute;
+        context.params.hasAttr = caseInsensitiveHasAttribute;
         //add query string params
         if (request.url.indexOf('?') > 0)
             util._extend(context.params, querystring.parse(request.url.substring(request.url.indexOf('?') + 1)));

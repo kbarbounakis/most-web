@@ -203,6 +203,45 @@ function HttpContext(httpRequest, httpResponse) {
 //todo: set HttpContext inheritance from configuration
 util.inherits(HttpContext, da.classes.DefaultDataContext);
 
+HttpContext.prototype.getParam = function(name) {
+    if (typeof name === 'string') {
+        if (this.hasOwnProperty('params')) {
+            var params = this['params'];
+            if (typeof params !== 'object') {
+                return;
+            }
+            if (params.hasOwnProperty(name))
+                return params[name];
+            //otherwise make a case insensitive search
+            var re = new RegExp('^' + name + '$','i');
+            var p = Object.keys(params).filter(function(x) { return re.test(x); })[0];
+            if (p)
+                return params[p];
+        }
+
+    }
+};
+
+HttpContext.prototype.hasParam = function(name) {
+    if (typeof name === 'string') {
+        if (this.hasOwnProperty('params')) {
+            var params = this['params'];
+            if (typeof params !== 'object') {
+                return false;
+            }
+            if (params.hasOwnProperty(name))
+                return true;
+            //otherwise make a case insensitive search
+            var re = new RegExp('^' + name + '$','i');
+            var p = Object.keys(params).filter(function(x) { return re.test(x); })[0];
+            if (p)
+                return true;
+        }
+    }
+    return false;
+};
+
+
 HttpContext.prototype.init = function() {
     //
 };

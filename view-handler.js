@@ -23,10 +23,18 @@ var app = require('./index'),
     util = require('util'),
     fs = require('fs'),
     route = require('./http-route'),
+    common = require('./common'),
     xml = require('most-xml'),
     path=require('path'),
     _ = require('lodash'),
-    S = require('string');
+    S = require('string'),
+    DataTypeValidator = require('most-data/').validators.DataTypeValidator,
+    MinLengthValidator = require('most-data/').validators.MinLengthValidator,
+    MaxLengthValidator = require('most-data/').validators.MaxLengthValidator,
+    MinValueValidator = require('most-data/').validators.MinValueValidator,
+    MaxValueValidator = require('most-data/').validators.MaxValueValidator,
+    RequiredValidator = require('most-data/').validators.RequiredValidator,
+    PatternValidator = require('most-data/').validators.PatternValidator;
 /**
  * @class ViewHandler
  * @constructor
@@ -164,12 +172,12 @@ ViewHandler.prototype.mapRequest = function (context, callback) {
          * @type {HttpRoute}
          */
         var currentRoute = queryRoute(requestUri);
-        if (typeof currentRoute === 'undefined' || currentRoute == null) {
+        if (typeof currentRoute === 'undefined' || currentRoute === null) {
             return callback();
         }
         //query controller
         var controllerName = currentRoute["controller"] || currentRoute.routeData["controller"] || queryController(requestUri);
-        if (typeof controllerName === 'undefined' || controllerName == null) {
+        if (typeof controllerName === 'undefined' || controllerName === null) {
             return callback();
         }
         //try to find controller class
@@ -364,8 +372,85 @@ ViewHandler.prototype.processRequest = function (context, callback) {
                     fn = controller.action;
                 }
                 //enumerate params
-                //var params = common.getFunctionParams(fn);
-                var params = [];
+                var functionParams = common.getFunctionParams(fn), params =[];
+                if (functionParams.length>0) {
+                    if (!useHttpMethodNamingConvention) {
+                        //remove last parameter (the traditional callback function)
+                        functionParams.pop();
+                    }
+                }
+
+                var functionParam, contextParam, httpParam, validator;
+                for (var i = 0; i < functionParams.length; i++) {
+                    functionParam = functionParams[i];
+                    //search in context parameters
+                    contextParam = context.getParam(functionParam);
+                    //validate parameter
+                    if (_.isObject(fn.httpParam)) {
+                        httpParam = fn.httpParam[functionParam];
+                        if (_.isObject(httpParam)) {
+                            if (typeof httpParam.type === 'string') {
+                                //--validate type
+                                validator = new DataTypeValidator(httpParam.type);
+                                validator.setContext(context);
+                                if (validator.validateSync(contextParam)) {
+                                    return callback(new common.HttpBadRequest('Bad request parameter'));
+                                }
+                            }
+                            if (httpParam.pattern instanceof RegExp) {
+                                //--validate pattern
+                                validator = new PatternValidator(httpParam.pattern);
+                                validator.setContext(context);
+                                if (validator.validateSync(contextParam)) {
+                                    return callback(new common.HttpBadRequest('Bad request parameter'));
+                                }
+                            }
+                            if (typeof httpParam.minLength === 'number') {
+                                //--validate min length
+                                validator = new MinLengthValidator(httpParam.minLength);
+                                validator.setContext(context);
+                                if (validator.validateSync(contextParam)) {
+                                    return callback(new common.HttpBadRequest('Bad request parameter'));
+                                }
+                            }
+                            if (typeof httpParam.maxLength === 'number') {
+                                //--validate max length
+                                validator = new MaxLengthValidator(httpParam.maxLength);
+                                validator.setContext(context);
+                                if (validator.validateSync(contextParam)) {
+                                    return callback(new common.HttpBadRequest('Bad request parameter'));
+                                }
+                            }
+                            if (typeof httpParam.minValue !== 'undefined') {
+                                //--validate min value
+                                validator = new MinValueValidator(httpParam.minValue);
+                                validator.setContext(context);
+                                if (validator.validateSync(contextParam)) {
+                                    return callback(new common.HttpBadRequest('Bad request parameter'));
+                                }
+                            }
+                            if (typeof httpParam.maxValue !== 'undefined') {
+                                //--validate max value
+                                validator = new MaxValueValidator(httpParam.required);
+                                validator.setContext(context);
+                                if (validator.validateSync(contextParam)) {
+                                    return callback(new common.HttpBadRequest('Bad request parameter'));
+                                }
+                            }
+
+                            if ((typeof httpParam.required !== 'undefined') && (httpParam.required===true)) {
+                                //--validate required value
+                                validator = new RequiredValidator();
+                                validator.setContext(context);
+                                if (validator.validateSync(contextParam)) {
+                                    return callback(new common.HttpBadRequest('Bad request parameter'));
+                                }
+                            }
+                        }
+                    }
+                    params.push(contextParam);
+                }
+
                 if (useHttpMethodNamingConvention) {
                     return fn.apply(controller, params).then(function(result) {
                         //execute http result
