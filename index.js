@@ -828,6 +828,31 @@ HttpApplication.prototype.db = function () {
     }
 };
 
+HttpApplication.prototype.setContextProvider = function(provider) {
+    if (typeof provider === 'undefined' || provider === null) {
+        throw new TypeError('Context provider may not be null.');
+    }
+    if (typeof provider.createInstance !== 'function') {
+        throw new TypeError('Context provider does not implement createInstance() method.');
+    }
+    this.module.service('contextProvider', function() {
+       return provider;
+    });
+};
+
+HttpApplication.prototype.getContextProvider = function() {
+    var contextProviderSvc = this.module.service('contextProvider');
+    if (typeof contextProviderSvc !== 'function') {
+        var httpContext = require('./http-context');
+        this.module.service('contextProvider', function() {
+            return httpContext;
+        });
+        return httpContext;
+    }
+    return contextProviderSvc();
+};
+
+
 /**
  * Creates an instance of HttpContext class.
  * @param {ClientRequest} request
@@ -835,8 +860,7 @@ HttpApplication.prototype.db = function () {
  * @returns {HttpContext}
  */
 HttpApplication.prototype.createContext = function (request, response) {
-    var httpContext = require('./http-context'),
-        context = httpContext.createInstance(request, response);
+    var context = this.getContextProvider().createInstance(request, response);
     //set context application
     context.application = this;
     //set handler events
@@ -906,7 +930,7 @@ HttpApplication.prototype.execute = function (fn) {
 
 /**
  * Executes an unattended internal process
- * @param {function(HttpContext)} fn
+ * @param {Function} fn
  */
 HttpApplication.prototype.unattended = function (fn) {
     //create context

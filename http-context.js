@@ -335,8 +335,8 @@ HttpContext.prototype.removeCookie = function(name, domain, cpath) {
 };
 /**
  * Executes the specified code in unattended mode.
- * @param {function(function(Error=, *=))} fn
- * @param {function(Error=, *=)} callback
+ * @param {Function} fn
+ * @param {Function} callback
  */
 HttpContext.prototype.unattended = function(fn, callback) {
     var self = this, interactiveUser;
