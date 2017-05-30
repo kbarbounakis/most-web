@@ -1,6 +1,6 @@
 {
   "name": "most-web",
-  "version": "1.8.7",
+  "version": "1.8.8",
   "description": "Most Web Framework - A JavaScript web framework for building scalable web application under node.js",
   "homepage": "http://www.most-framework.com/",
   "repository": {
@@ -16,13 +16,14 @@
     "model",
     "view",
     "controller",
-      "server",
+    "server",
     "routes"
   ],
   "author": {
     "name": "Kyriakos Barbounakis",
     "email": "k.barbounakis@gmail.com"
   },
+  "license": "BSD-3-Clause",
   "licenses": [
     {
       "type": "BSD-3-Clause"
@@ -35,6 +36,7 @@
     "domino": "1.0.18",
     "ejs": "0.8.5",
     "formidable": "1.0.14",
+    "lodash": "^4.17.4",
     "moment": "~2.8.4",
     "most-array": "~1.0.1",
     "most-data": "~1.8.0",
