@@ -1,6 +1,6 @@
 {
   "name": "most-web",
-  "version": "1.8.6",
+  "version": "1.8.7",
   "description": "Most Web Framework - A JavaScript web framework for building scalable web application under node.js",
   "homepage": "http://www.most-framework.com/",
   "repository": {
@@ -10,12 +10,13 @@
   "keywords": [
     "web",
     "mvc",
+    "most-web",
     "most-web.js",
-    "most-webjs",
     "framework",
     "model",
     "view",
     "controller",
+      "server",
     "routes"
   ],
   "author": {
@@ -24,7 +25,7 @@
   },
   "licenses": [
     {
-      "type": "BSD-3 Clause"
+      "type": "BSD-3-Clause"
     }
   ],
   "dependencies": {

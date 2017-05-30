@@ -11,7 +11,7 @@
 /**
  * @private
  */
-var web = require('most-web');
+var web = require('./index');
 /**
  * Extends context parameters by adding the default context params that are defined on the current route, if any
  * @class RouteParamsHandler
@@ -23,20 +23,20 @@ function RouteParamsHandler() {
 
 RouteParamsHandler.prototype.mapRequest = function(context, callback) {
     if (web.common.isNullOrUndefined(context.request)) {
-        callback()
+        return callback();
     }
     else if (web.common.isNullOrUndefined(context.request.route)) {
-        callback();
+        return callback();
     }
     else {
         var route=context.request.route;
         //extend params
         context.params = context.params || {};
-        if (typeof route.params === 'object' && route.params!=null) {
+        if (typeof route.params === 'object' && route.params!==null) {
             var keys = Object.keys(route.params);
             keys.forEach(function(key) { context.params[key] = route.params[key] });
         }
-        callback();
+        return callback();
     }
 };
 
