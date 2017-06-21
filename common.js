@@ -11,7 +11,10 @@
 /**
  * @ignore
  */
-var util = require('util'), errors = require('./http-error-codes.json'), crypto = require('crypto');
+var util = require('util'),
+    _ = require('lodash'),
+    errors = require('./http-error-codes.json'),
+    crypto = require('crypto');
 
 /**
  * Abstract Method Exception class
@@ -64,13 +67,10 @@ function HttpException(status, message, innerMessage) {
  * @returns {Error|HttpException}
  */
 HttpException.create = function(err) {
-    if (typeof err === 'undefined' || err==null)
+    if (_.isNil(err))
         return new HttpException();
     else {
-        if (err.status)
-            return new HttpException(err.status, err.message);
-        else
-            return new HttpException(500, err.message);
+        return _.assign(new HttpException(err.status || 500, err.message), err);
     }
 };
 

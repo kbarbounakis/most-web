@@ -14,6 +14,7 @@
  */
 var common = require('./common'),
     files = require('./files'),
+    _ = require('lodash'),
     mvc = require('./http-mvc'),
     html = require('./html'), util = require('util'), array = require('most-array'),
     async = require('async'), path = require("path"), fs = require("fs"),
@@ -22,6 +23,7 @@ var common = require('./common'),
     da = require('most-data'),
     querystring = require('querystring'),
     HttpContext= require('./http-context').HttpContext,
+    DataException = require('most-data/types').DataException,
     decorators = require('./decorators'),
     crypto = require('crypto');
 
@@ -1244,55 +1246,51 @@ function onHtmlError(context, err, callback) {
 HttpApplication.prototype.onError = function (context, err, callback) {
     callback = callback || function () { };
     try {
-        if (err instanceof Error) {
-            //always log error
-            common.log(err);
-            //get response object
-            var response = context.response, ejs = require('ejs');
-            if (common.isNullOrUndefined(response)) {
-                callback.call(this);
-            }
-            if (response._headerSent) {
-                callback.call(this);
-                return;
-            }
-            onHtmlError(context, err, function(err) {
-               if (err) {
-                   //send plain text
-                   response.writeHead(err.status || 500, {"Content-Type": "text/plain"});
-                   //if error is an HTTP Exception
-                   if (err instanceof common.HttpException) {
-                       response.write(err.status + ' ' + err.message + "\n");
-                   }
-                   else {
-                       //otherwise send status 500
-                       response.write('500 ' + err.message + "\n");
-                   }
-                   //send extra data (on development)
-                   if (process.env.NODE_ENV === 'development') {
-                       if (!common.isEmptyString(err.innerMessage)) {
-                           response.write(err.innerMessage + "\n");
-                       }
-                       if (!common.isEmptyString(err.stack)) {
-                           response.write(err.stack + "\n");
-                       }
-                   }
-               }
-                callback.call(this);
-            });
 
-
+        if (_.isNil(err)) {
+            return callback.bind(this)();
         }
-        else {
-            callback.call(this);
+        //always log error
+        common.log(err);
+        //get response object
+        var response = context.response, ejs = require('ejs');
+        if (common.isNullOrUndefined(response)) {
+            return callback.bind(this)();
         }
+        if (response._headerSent) {
+            return callback.bind(this)();
+        }
+        onHtmlError(context, err, function(err) {
+            if (err) {
+                //send plain text
+                response.writeHead(err.status || 500, {"Content-Type": "text/plain"});
+                //if error is an HTTP Exception
+                if (err instanceof common.HttpException) {
+                    response.write(err.status + ' ' + err.message + "\n");
+                }
+                else {
+                    //otherwise send status 500
+                    response.write('500 ' + err.message + "\n");
+                }
+                //send extra data (on development)
+                if (process.env.NODE_ENV === 'development') {
+                    if (!common.isEmptyString(err.innerMessage)) {
+                        response.write(err.innerMessage + "\n");
+                    }
+                    if (!common.isEmptyString(err.stack)) {
+                        response.write(err.stack + "\n");
+                    }
+                }
+            }
+            return callback.bind(this)();
+        });
     }
-    catch (e) {
-        common.log(e);
+    catch (err) {
+        common.log(err);
         if (context.response) {
             context.response.writeHead(500, {"Content-Type": "text/plain"});
             context.response.write("500 Internal Server Error");
-            callback.call(this);
+            return callback.bind(this)();
         }
     }
 };
@@ -1318,7 +1316,7 @@ function startInternal(options, callback) {
     try {
         //validate options
 
-        if (self.config == null)
+        if (self.config === null)
             self.init();
         /**
          * @memberof process.env
@@ -1346,9 +1344,9 @@ function startInternal(options, callback) {
                             });
                         });
                     }
-                    if (self.listeners('error').length == 0) {
+                    if (self.listeners('error').length === 0) {
                         self.onError(context, err, function () {
-                            if (typeof context === 'undefined' || context == null) { return; }
+                            if (_.isNil(context)) { return; }
                             context.finalize(function() {
                                 if (context.response) { context.response.end(); }
                             });
@@ -1357,7 +1355,7 @@ function startInternal(options, callback) {
                     else {
                         //raise application error event
                         self.emit('error', { context:context, error:err }, function() {
-                            if (typeof context === 'undefined' || context == null) { return; }
+                            if (typeof context === 'undefined' || context === null) { return; }
                             context.finalize(function() {
                                 if (context.response) { context.response.end(); }
                             });
@@ -1365,7 +1363,7 @@ function startInternal(options, callback) {
                     }
                 }
                 else {
-                    if (typeof context === 'undefined' || context == null) { return; }
+                    if (_.isNil(context)) { return; }
                     context.finalize(function() {
                         if (context.response) { context.response.end(); }
                     });
@@ -1503,12 +1501,14 @@ function httpApplicationErrors(application) {
     return {
         html: function(context, error, callback) {
             callback = callback || function () { };
+            if (_.isNil(error)) { return callback(); }
             onHtmlError(context, error, function(err) {
                 callback.call(self, err);
             });
         },
         text: function(context, error, callback) {
             callback = callback || function () { };
+            if (_.isNil(error)) { return callback(); }
             /**
              * @type {ServerResponse}
              */
@@ -1534,37 +1534,41 @@ function httpApplicationErrors(application) {
                     }
                 }
             }
-            callback.call(this);
+            return callback.bind(self)();
         },
         json: function(context, error, callback) {
             callback = callback || function () { };
+            if (_.isNil(error)) { return callback(); }
             context.request.headers = context.request.headers || { };
-            if (/application\/json/g.test(context.request.headers.accept)) {
-                //prepare JSON result
+            if (/application\/json/g.test(context.request.headers.accept) || (context.format === 'json')) {
                 var result;
-                if ((err instanceof common.HttpException) || (typeof err.status !== 'undefined')) {
-                    result = new mvc.HttpJsonResult({ status:error.status, code:error.code, message:error.message, innerMessage: error.innerMessage });
+                if (error instanceof common.HttpException) {
+                    result = new mvc.HttpJsonResult(error);
+                    result.responseStatus = error.status;
                 }
                 else if (process.env.NODE_ENV === 'development') {
                     result = new mvc.HttpJsonResult(err);
+                    result.responseStatus = err.status || 500;
                 }
                 else {
                     result = new mvc.HttpJsonResult(new common.HttpServerError());
+                    result.responseStatus = 500;
                 }
                 //execute redirect result
-                result.execute(context, function(err) {
-                    callback.call(self, err);
+                return result.execute(context, function(err) {
+                    return callback.bind(self)(err);
                 });
-                return;
             }
             //go to next error if any
-            callback.call(self, error);
+            callback.bind(self)(error);
         },
         unauthorized: function(context, error, callback) {
+            callback = callback || function () { };
+            if (_.isNil(error)) { return callback(); }
             if (common.isNullOrUndefined(context) || common.isNullOrUndefined(context)) {
                 return callback.call(self);
             }
-            if (error.status != 401) {
+            if (error.status !== 401) {
                 //go to next error if any
                 return callback.call(self, error);
             }
@@ -1585,7 +1589,7 @@ function httpApplicationErrors(application) {
                 }
             }
             //go to next error if any
-            callback.call(self, error);
+            callback.bind(self)(error);
         }
     }
 }
