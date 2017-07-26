@@ -122,6 +122,7 @@ function httpParamAlias(name, alias) {
  * @property {number} minLength
  * @property {number} maxLength
  * @property {boolean} required
+ * @property {string} message
  * @constructor
  */
 function HttpParamAttributeOptions() {
@@ -129,7 +130,7 @@ function HttpParamAttributeOptions() {
 }
 
 /**
- * @param {HttpParamAttributeOptions=} options
+ * @param {HttpParamAttributeOptions|*=} options
  * @returns {Function}
  */
 function httpParam(options) {

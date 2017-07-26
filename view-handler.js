@@ -380,7 +380,20 @@ ViewHandler.prototype.processRequest = function (context, callback) {
                     }
                 }
 
-                var functionParam, contextParam, httpParam, validator;
+                var functionParam, contextParam, httpParam, validator, validationResult;
+
+                function httpParamValidationFailedCallback(context, httpParam, validationResult, callback) {
+                    "use strict";
+                    common.log(_.assign(validationResult, {
+                        "param":httpParam,
+                        "request": {
+                            "url":context.request.url,
+                            "method":context.request.method
+                        }
+                    }));
+                    return callback(new common.HttpBadRequest('Bad request parameter', httpParam.message || validationResult.message));
+                }
+
                 for (var i = 0; i < functionParams.length; i++) {
                     functionParam = functionParams[i];
                     //search in context parameters
@@ -393,48 +406,54 @@ ViewHandler.prototype.processRequest = function (context, callback) {
                                 //--validate type
                                 validator = new DataTypeValidator(httpParam.type);
                                 validator.setContext(context);
-                                if (validator.validateSync(contextParam)) {
-                                    return callback(new common.HttpBadRequest('Bad request parameter'));
+                                validationResult = validator.validateSync(contextParam);
+                                if (validationResult) {
+                                    return httpParamValidationFailedCallback(context, httpParam, validationResult, callback);
                                 }
                             }
                             if (httpParam.pattern instanceof RegExp) {
                                 //--validate pattern
                                 validator = new PatternValidator(httpParam.pattern);
                                 validator.setContext(context);
-                                if (validator.validateSync(contextParam)) {
-                                    return callback(new common.HttpBadRequest('Bad request parameter'));
+                                validationResult = validator.validateSync(contextParam);
+                                if (validationResult) {
+                                    return httpParamValidationFailedCallback(context, httpParam, validationResult, callback);
                                 }
                             }
                             if (typeof httpParam.minLength === 'number') {
                                 //--validate min length
                                 validator = new MinLengthValidator(httpParam.minLength);
                                 validator.setContext(context);
-                                if (validator.validateSync(contextParam)) {
-                                    return callback(new common.HttpBadRequest('Bad request parameter'));
+                                validationResult = validator.validateSync(contextParam);
+                                if (validationResult) {
+                                    return httpParamValidationFailedCallback(context, httpParam, validationResult, callback);
                                 }
                             }
                             if (typeof httpParam.maxLength === 'number') {
                                 //--validate max length
                                 validator = new MaxLengthValidator(httpParam.maxLength);
                                 validator.setContext(context);
-                                if (validator.validateSync(contextParam)) {
-                                    return callback(new common.HttpBadRequest('Bad request parameter'));
+                                validationResult = validator.validateSync(contextParam);
+                                if (validationResult) {
+                                    return httpParamValidationFailedCallback(context, httpParam, validationResult, callback);
                                 }
                             }
                             if (typeof httpParam.minValue !== 'undefined') {
                                 //--validate min value
                                 validator = new MinValueValidator(httpParam.minValue);
                                 validator.setContext(context);
-                                if (validator.validateSync(contextParam)) {
-                                    return callback(new common.HttpBadRequest('Bad request parameter'));
+                                validationResult = validator.validateSync(contextParam);
+                                if (validationResult) {
+                                    return httpParamValidationFailedCallback(context, httpParam, validationResult, callback);
                                 }
                             }
                             if (typeof httpParam.maxValue !== 'undefined') {
                                 //--validate max value
                                 validator = new MaxValueValidator(httpParam.required);
                                 validator.setContext(context);
-                                if (validator.validateSync(contextParam)) {
-                                    return callback(new common.HttpBadRequest('Bad request parameter'));
+                                validationResult = validator.validateSync(contextParam);
+                                if (validationResult) {
+                                    return httpParamValidationFailedCallback(context, httpParam, validationResult, callback);
                                 }
                             }
 
@@ -442,8 +461,9 @@ ViewHandler.prototype.processRequest = function (context, callback) {
                                 //--validate required value
                                 validator = new RequiredValidator();
                                 validator.setContext(context);
-                                if (validator.validateSync(contextParam)) {
-                                    return callback(new common.HttpBadRequest('Bad request parameter'));
+                                validationResult = validator.validateSync(contextParam);
+                                if (validationResult) {
+                                    return httpParamValidationFailedCallback(context, httpParam, validationResult, callback);
                                 }
                             }
                         }
