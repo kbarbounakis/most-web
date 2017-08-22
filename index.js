@@ -1547,8 +1547,8 @@ function httpApplicationErrors(application) {
                     result.responseStatus = error.status;
                 }
                 else if (process.env.NODE_ENV === 'development') {
-                    result = new mvc.HttpJsonResult(err);
-                    result.responseStatus = err.status || 500;
+                    result = new mvc.HttpJsonResult(error);
+                    result.responseStatus = error.status || 500;
                 }
                 else {
                     result = new mvc.HttpJsonResult(new common.HttpServerError());
