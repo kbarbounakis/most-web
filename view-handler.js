@@ -28,13 +28,13 @@ var app = require('./index'),
     path=require('path'),
     _ = require('lodash'),
     S = require('string'),
-    DataTypeValidator = require('most-data/').validators.DataTypeValidator,
-    MinLengthValidator = require('most-data/').validators.MinLengthValidator,
-    MaxLengthValidator = require('most-data/').validators.MaxLengthValidator,
-    MinValueValidator = require('most-data/').validators.MinValueValidator,
-    MaxValueValidator = require('most-data/').validators.MaxValueValidator,
-    RequiredValidator = require('most-data/').validators.RequiredValidator,
-    PatternValidator = require('most-data/').validators.PatternValidator;
+    DataTypeValidator = require('most-data').validators.DataTypeValidator,
+    MinLengthValidator = require('most-data').validators.MinLengthValidator,
+    MaxLengthValidator = require('most-data').validators.MaxLengthValidator,
+    MinValueValidator = require('most-data').validators.MinValueValidator,
+    MaxValueValidator = require('most-data').validators.MaxValueValidator,
+    RequiredValidator = require('most-data').validators.RequiredValidator,
+    PatternValidator = require('most-data').validators.PatternValidator;
 /**
  * @class ViewHandler
  * @constructor

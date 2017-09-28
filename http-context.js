@@ -59,7 +59,7 @@ function HttpContext(httpRequest, httpResponse) {
         get: function () {
             var res = self.application.resolveMime(self.request.url);
             //if no extension is defined
-            if (typeof res === 'undefined' || res == null) {
+            if (typeof res === 'undefined' || res === null) {
                 //resolve the defined mime type by filter application mime types
                 if (self.params && self.params.mime) {
                     res = self.application.config.mimes.find(function(x) {
@@ -69,15 +69,18 @@ function HttpContext(httpRequest, httpResponse) {
                 //or try to get accept header (e.g. text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8)
                 else if (self.request && self.request.headers) {
                     //get and split ACCEPT HTTP header
-                    var accept = self.request.headers['accept'], arr = accept.split(';');
-                    if (arr[0]) {
-                        //get acceptable mime types
-                        var mimes = arr[0].split(',');
-                        if (mimes.length>0) {
-                            //try to find the application mime associated with the first acceptable mime type
-                            res = self.application.config.mimes.find(function(x) {
-                                return x.type === mimes[0];
-                            });
+                    var accept = self.request.headers['accept'];
+                    if (typeof accept === 'string') {
+                        var arr = accept.split(';');
+                        if (arr[0]) {
+                            //get acceptable mime types
+                            var mimes = arr[0].split(',');
+                            if (mimes.length>0) {
+                                //try to find the application mime associated with the first acceptable mime type
+                                res = self.application.config.mimes.find(function(x) {
+                                    return x.type === mimes[0];
+                                });
+                            }
                         }
                     }
                 }

@@ -382,8 +382,6 @@ function queryAbsoluteViewPath(search, controller, view, extension, callback) {
  * @private
  */
 function isAbsolute(p) {
-    //var re = new RegExp('^' + p, 'i');
-    //return re.test(path.resolve(process.cwd(), p));
     return path.normalize(p + '/') === path.normalize(path.resolve(p) + '/');
 }
 

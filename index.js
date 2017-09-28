@@ -20,12 +20,17 @@ var common = require('./common'),
     async = require('async'), path = require("path"), fs = require("fs"),
     url = require('url'),
     http = require('http'),
-    da = require('most-data'),
+    EventEmitter2 = require('most-data').types.EventEmitter2,
+    DataConfiguration = require('most-data').cfg.DataConfiguration,
     querystring = require('querystring'),
     HttpContext= require('./http-context').HttpContext,
     DataException = require('most-data/types').DataException,
     decorators = require('./decorators'),
     crypto = require('crypto');
+var Symbol = require('symbol');
+var executionPathProperty = Symbol('executionPath');
+var configPathProperty = Symbol('configPath');
+var strategiesProperty = Symbol('strategies');
 
 /**
  * @classdesc ApplicationOptions class describes the startup options of a MOST Web Framework application.
@@ -295,15 +300,19 @@ HttpHandler.prototype.endRequest = function (context, callback) {
 /**
  * @class HttpApplication
  * @constructor
+ * @param {string} executionPath
  * @augments EventEmitter
  */
-function HttpApplication() {
-    this.executionPath = path.join(process.cwd(), 'app');
+function HttpApplication(executionPath) {
+    /**
+     * sets the current execution path
+     */
+    this[executionPathProperty] = _.isNil(executionPath) ? path.join(process.cwd(), 'app') : path.join(executionPath, 'app');
     /**
      * Gets the current application configuration path
      * @type {*}
      */
-    this.configPath = path.join(process.cwd(), 'app');
+    this[configPathProperty] = _.isNil(executionPath) ? path.join(process.cwd(), 'config') : path.join(executionPath, 'config');
     /**
      * Gets or sets application configuration settings
      * @type {ApplicationConfig}
@@ -326,21 +335,16 @@ function HttpApplication() {
     //register auth service
     var self = this;
     self.module.service('$auth', function($context) {
-        try {
-            //ensure settings
-            self.config.settings.auth = self.config.settings.auth || { };
-            var providerPath = self.config.settings.auth.provider || './auth-service';
-            //get auth provider
-            if (providerPath.indexOf('/')==0)
-                providerPath = self.mapPath(providerPath);
-            var svc = require(providerPath);
-            if (typeof svc.createInstance !== 'function')
-                throw new Error('Invalid authentication provider module.');
-            return svc.createInstance($context);
-        }
-        catch (e) {
-            throw e;
-        }
+        //ensure settings
+        self.config.settings.auth = self.config.settings.auth || { };
+        var providerPath = self.config.settings.auth.provider || './auth-service';
+        //get auth provider
+        if (providerPath.indexOf('/')===0)
+            providerPath = self.mapPath(providerPath);
+        var svc = require(providerPath);
+        if (typeof svc.createInstance !== 'function')
+            throw new Error('Invalid authentication provider module.');
+        return svc.createInstance($context);
     });
     /**
      * @type {HttpCache}
@@ -385,7 +389,15 @@ function HttpApplication() {
 
 }
 
-util.inherits(HttpApplication, da.types.EventEmitter2);
+util.inherits(HttpApplication, EventEmitter2);
+
+HttpApplication.prototype.getExecutionPath = function() {
+    return this[executionPathProperty];
+};
+
+HttpApplication.prototype.getConfigurationPath = function() {
+    return this[configPathProperty];
+};
 
 /**
  * Initializes application configuration.
@@ -401,7 +413,7 @@ HttpApplication.prototype.init = function () {
     //first of all try to load environment specific configuration
     try {
         common.log(util.format('Init: Loading environment specific configuration file (app.%s.json)', env));
-        str = path.join(process.cwd(), 'config', 'app.' + env + '.json');
+        str = path.join(this.getConfigurationPath(), 'app.' + env + '.json');
         /**
          * @type {ApplicationConfig}
          */
@@ -414,7 +426,7 @@ HttpApplication.prototype.init = function () {
             //try to load default configuration file
             try {
                 common.log('Init: Loading environment default configuration file (app.json)');
-                str = path.join(process.cwd(), 'config', 'app.json');
+                str = path.join(this.getConfigurationPath(), 'app.json');
                 /**
                  * @type {ApplicationConfig}
                  */
@@ -449,7 +461,7 @@ HttpApplication.prototype.init = function () {
     //load routes (if empty)
     if (web.common.isNullOrUndefined(this.config.routes)) {
         try {
-            this.config.routes = require(path.join(process.cwd(),'config/routes.json'));
+            this.config.routes = require(path.resolve(this.getConfigurationPath(),'routes.json'));
         }
         catch(e) {
             if (e.code === 'MODULE_NOT_FOUND') {
@@ -467,7 +479,8 @@ HttpApplication.prototype.init = function () {
     if (web.common.isNullOrUndefined(this.config.dataTypes))
     {
         try {
-            this.config.dataTypes = da.cfg.current.dataTypes;
+            var dataConfiguration = new DataConfiguration(this[configPathProperty]);
+            this.config.dataTypes = dataConfiguration.dataTypes;
         }
         catch(e) {
             web.common.log('Init: An error occured while trying to load application data types configuration.');
@@ -525,7 +538,7 @@ HttpApplication.prototype.init = function () {
  */
 HttpApplication.prototype.mapPath = function (s) {
     var uri = url.parse(s).pathname;
-    return path.join(this.executionPath, uri);
+    return path.join(this[executionPathProperty], uri);
 };
 
 /**
@@ -618,7 +631,7 @@ HttpApplication.prototype.resolveMime = function (request) {
  * */
 HttpApplication.prototype.encrypt = function (data)
 {
-    if (typeof data === 'undefined' || data==null)
+    if (typeof data === 'undefined' || data===null)
         return null;
     //validate settings
     if (!this.config.settings.crypto)
@@ -798,10 +811,10 @@ HttpApplication.prototype.processRequest = function (context, callback) {
  * @returns {AbstractAdapter}
  */
 HttpApplication.prototype.db = function () {
-    if ((this.config.adapters == null) || (this.config.adapters.length == 0))
+    if ((this.config.adapters === null) || (this.config.adapters.length === 0))
         throw new Error('Data adapters configuration settings are missing or cannot be accessed.');
     var adapter = null;
-    if (this.config.adapters.length == 1) {
+    if (this.config.adapters.length === 1) {
         //there is only one adapter so try to instantiate it
         adapter = this.config.adapters[0];
     }
@@ -810,7 +823,7 @@ HttpApplication.prototype.db = function () {
             return x.default;
         });
     }
-    if (adapter == null)
+    if (adapter === null)
         throw new Error('There is no default data adapter or the configuration is incorrect.');
     //try to instantiate adapter
     if (!adapter.invariantName)
@@ -1389,11 +1402,12 @@ function startInternal(options, callback) {
 }
 
 /**
- * @param {ApplicationOptions|*} options
+ * @param {ApplicationOptions|*=} options
  * @param {Function=} callback
  */
 HttpApplication.prototype.start = function (options, callback) {
     callback = callback || function() { };
+    options = options || { };
     if (options.cluster) {
         var clusters = 1;
         //check if options.cluster="auto"
@@ -1427,15 +1441,15 @@ HttpApplication.prototype.start = function (options, callback) {
                     if (debug) cluster.settings.execArgv.pop();
                 }
             } else {
-                startInternal.call(this,options, callback);
+                startInternal.bind(this)(options, callback);
             }
         }
         else {
-            startInternal.call(this,options, callback);
+            startInternal.bind(this)(options, callback);
         }
     }
     else {
-        startInternal.call(this,options, callback);
+        startInternal.bind(this)(options, callback);
     }
 };
 /**
@@ -1491,6 +1505,45 @@ HttpApplication.prototype.controller = function(name, ctor) {
     this.config.controllers[name] = ctor;
     return this;
 };
+
+/**
+ * Registers HttpApplication as express framework middleware
+ */
+HttpApplication.prototype.runtime = function() {
+    var self = this;
+    return function runtimeParser(req, res, next) {
+        //create context
+        var context = self.createContext(req,res);
+        context.request.on('close', function() {
+            //finalize data context
+            if (_.isObject(context)) {
+                context.finalize(function() {
+                    if (context.response) {
+                        //if response is alive
+                        if (context.response.finished === false) {
+                            //end response
+                            context.response.end();
+                        }
+                    }
+                });
+            }
+        });
+        //process request
+        self.processRequest(context, function(err) {
+            if (err) {
+                context.finalize(function() {
+                    return next(err);
+                });
+            }
+            else {
+                context.finalize(function() {
+                    context.response.end();
+                });
+            }
+        });
+    };
+};
+
 /**
  * @param {HttpApplication} application
  * @returns {{html: Function, text: Function, json: Function, unauthorized: Function}}
@@ -1594,6 +1647,7 @@ function httpApplicationErrors(application) {
     }
 }
 
+
 var web = { };
 
 web.HttpApplication = HttpApplication;
@@ -1607,38 +1661,7 @@ web.current = undefined;
  * @param {*=} options
  */
 web.runtime = function(options) {
-    var self = this;
-    return function runtimeParser(req, res, next) {
-        //create context
-        var ctx = self.current.createContext(req,res);
-        ctx.request.on('close', function() {
-            //client was disconnected abnormally
-            //finalize data context
-            if (typeof ctx !== 'undefined' && ctx !=null) {
-                ctx.finalize(function() {
-                    if (ctx.response) {
-                        //if response is alive
-                        if (ctx.response.finished == false)
-                        //end response
-                            ctx.response.end();
-                    }
-                });
-            }
-        });
-        //process request
-        self.current.processRequest(ctx, function(err) {
-            if (err) {
-                ctx.finalize(function() {
-                    next(err);
-                });
-            }
-            else {
-                ctx.finalize(function() {
-                    ctx.response.end();
-                });
-            }
-        });
-    };
+    return web.current.runtime();
 };
 
 /**
@@ -1649,7 +1672,7 @@ web.unauthorized = function(options) {
     return function(err, req, res, next)
     {
         try {
-            if (err.status==401)  {
+            if (err.status===401)  {
                 if (/text\/html/g.test(req.get('accept'))) {
                     if (web.current.config.settings) {
                         if (web.current.config.settings.auth) {
@@ -1783,7 +1806,8 @@ web.views = {
     },
     /**
      * Creates an HTML response with the data provided.
-     * @param data
+     * @param {string} name
+     * @param {*} data
      * @returns {HttpViewResult}
      */
     createViewResult: function (name, data) {
@@ -1843,4 +1867,7 @@ Object.defineProperty(web, 'current', {
     enumerable: false
 });
 
-module.exports = web;
+if (typeof exports !== 'undefined')
+{
+    module.exports = web;
+}
