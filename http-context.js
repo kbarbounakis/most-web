@@ -32,6 +32,12 @@ var path = require('path'),
  * @returns {HttpContext}
  */
 function HttpContext(httpRequest, httpResponse) {
+
+    /**
+     * @type HttpApplication
+     */
+    this.application = null;
+
     /**
      * @type {ClientRequest}
      */
@@ -41,10 +47,6 @@ function HttpContext(httpRequest, httpResponse) {
      * @type {ServerResponse}
      */
     this.response = httpResponse;
-    /**
-     *@type {HttpApplication}
-     */
-    this.application = undefined;
     var __application__ = null;
     Object.defineProperty(this, 'application', {
         get: function () {
@@ -205,6 +207,13 @@ function HttpContext(httpRequest, httpResponse) {
 }
 //todo: set HttpContext inheritance from configuration
 util.inherits(HttpContext, da.classes.DefaultDataContext);
+/**
+ * Get an instance of HttpApplication class which represents the parent application of this context
+ * @returns {HttpApplication}
+ */
+HttpContext.prototype.getApplication = function() {
+  return this.application;
+};
 
 HttpContext.prototype.getParam = function(name) {
     if (typeof name === 'string') {

@@ -18,23 +18,33 @@
  * @ignore
  */
 var app = require('./index'),
-    array = require('most-array'),
     url = require('url'),
     util = require('util'),
+    async = require('async'),
     fs = require('fs'),
     route = require('./http-route'),
     common = require('./common'),
     xml = require('most-xml'),
     path=require('path'),
     _ = require('lodash'),
-    S = require('string'),
-    DataTypeValidator = require('most-data').validators.DataTypeValidator,
-    MinLengthValidator = require('most-data').validators.MinLengthValidator,
-    MaxLengthValidator = require('most-data').validators.MaxLengthValidator,
-    MinValueValidator = require('most-data').validators.MinValueValidator,
-    MaxValueValidator = require('most-data').validators.MaxValueValidator,
-    RequiredValidator = require('most-data').validators.RequiredValidator,
-    PatternValidator = require('most-data').validators.PatternValidator;
+    HttpConsumer = require('./consumers').HttpConsumer,
+    S = require('string');
+
+function _isPromise(f) {
+    if (typeof f !== 'object') {
+        return false;
+    }
+    return (typeof f.then === 'function') && (typeof f.catch === 'function');
+}
+
+/**
+ * @method isPromise
+ * @memberOf _
+ */
+if (typeof _.isPromise !== 'function') {
+    _.mixin({'isPromise' : _isPromise});
+}
+
 /**
  * @class ViewHandler
  * @constructor
@@ -228,7 +238,7 @@ ViewHandler.prototype.postMapRequest = function (context, callback) {
             if (err) { return callback(err); }
             var obj;
             if (context.is('POST')) {
-                if (context.format=='xml') {
+                if (context.format==='xml') {
                     //get current model
                     if (context.request.body) {
                         //load xml
@@ -242,7 +252,7 @@ ViewHandler.prototype.postMapRequest = function (context, callback) {
                         }
                     }
                 }
-                else if (context.format=='json') {
+                else if (context.format==='json') {
                     if (typeof context.request.body === 'string') {
                         //parse json data
                         try {
@@ -379,127 +389,78 @@ ViewHandler.prototype.processRequest = function (context, callback) {
                         functionParams.pop();
                     }
                 }
-
-                var functionParam, contextParam, httpParam, validator, validationResult;
-
-                function httpParamValidationFailedCallback(context, httpParam, validationResult, callback) {
-                    "use strict";
-                    common.log(_.assign(validationResult, {
-                        "param":httpParam,
-                        "request": {
-                            "url":context.request.url,
-                            "method":context.request.method
+                //execute action handler decorators
+                var actionConsumers = _.filter(_.keys(fn), (x) => {
+                    return (fn[x] instanceof HttpConsumer);
+                });
+                return async.eachSeries(actionConsumers, function(actionConsumer, cb) {
+                    try {
+                        var source = fn[actionConsumer].run(context);
+                        if (!_.isPromise(source)) {
+                            return cb(new Error("Invalid type. Action consumer result must be a promise."));
                         }
-                    }));
-                    return callback(new common.HttpBadRequest('Bad request parameter', httpParam.message || validationResult.message));
-                }
-
-                for (var i = 0; i < functionParams.length; i++) {
-                    functionParam = functionParams[i];
-                    //search in context parameters
-                    contextParam = context.getParam(functionParam);
-                    //validate parameter
-                    if (_.isObject(fn.httpParam)) {
-                        httpParam = fn.httpParam[functionParam];
-                        if (_.isObject(httpParam)) {
-                            if (typeof httpParam.type === 'string') {
-                                //--validate type
-                                validator = new DataTypeValidator(httpParam.type);
-                                validator.setContext(context);
-                                validationResult = validator.validateSync(contextParam);
-                                if (validationResult) {
-                                    return httpParamValidationFailedCallback(context, httpParam, validationResult, callback);
-                                }
-                            }
-                            if (httpParam.pattern instanceof RegExp) {
-                                //--validate pattern
-                                validator = new PatternValidator(httpParam.pattern);
-                                validator.setContext(context);
-                                validationResult = validator.validateSync(contextParam);
-                                if (validationResult) {
-                                    return httpParamValidationFailedCallback(context, httpParam, validationResult, callback);
-                                }
-                            }
-                            if (typeof httpParam.minLength === 'number') {
-                                //--validate min length
-                                validator = new MinLengthValidator(httpParam.minLength);
-                                validator.setContext(context);
-                                validationResult = validator.validateSync(contextParam);
-                                if (validationResult) {
-                                    return httpParamValidationFailedCallback(context, httpParam, validationResult, callback);
-                                }
-                            }
-                            if (typeof httpParam.maxLength === 'number') {
-                                //--validate max length
-                                validator = new MaxLengthValidator(httpParam.maxLength);
-                                validator.setContext(context);
-                                validationResult = validator.validateSync(contextParam);
-                                if (validationResult) {
-                                    return httpParamValidationFailedCallback(context, httpParam, validationResult, callback);
-                                }
-                            }
-                            if (typeof httpParam.minValue !== 'undefined') {
-                                //--validate min value
-                                validator = new MinValueValidator(httpParam.minValue);
-                                validator.setContext(context);
-                                validationResult = validator.validateSync(contextParam);
-                                if (validationResult) {
-                                    return httpParamValidationFailedCallback(context, httpParam, validationResult, callback);
-                                }
-                            }
-                            if (typeof httpParam.maxValue !== 'undefined') {
-                                //--validate max value
-                                validator = new MaxValueValidator(httpParam.required);
-                                validator.setContext(context);
-                                validationResult = validator.validateSync(contextParam);
-                                if (validationResult) {
-                                    return httpParamValidationFailedCallback(context, httpParam, validationResult, callback);
-                                }
-                            }
-
-                            if ((typeof httpParam.required !== 'undefined') && (httpParam.required===true)) {
-                                //--validate required value
-                                validator = new RequiredValidator();
-                                validator.setContext(context);
-                                validationResult = validator.validateSync(contextParam);
-                                if (validationResult) {
-                                    return httpParamValidationFailedCallback(context, httpParam, validationResult, callback);
-                                }
-                            }
-                        }
+                        return source.then(()=> {
+                            return cb();
+                        }).catch((err)=> {
+                            return cb(err);
+                        });
                     }
-                    params.push(contextParam);
-                }
-
-                if (useHttpMethodNamingConvention) {
-                    return fn.apply(controller, params).then(function(result) {
-                        //execute http result
-                        return result.execute(context, callback);
-                    }).catch(function(err) {
-                        return callback.bind(context)(err);
-                    });
-                }
-                /**
-                 * @type HttpResult
-                 * */
-                params.push(function (err, result) {
+                    catch(err) {
+                        return cb(err);
+                    }
+                }, function(err) {
                     if (err) {
-                        //throw error
-                        callback.call(context, err);
+                        return callback(err);
                     }
-                    else {
-                        //execute http result
-                        return result.execute(context, callback);
+                    try {
+                        if (functionParams.length>0) {
+                            var k = 0;
+                            while (k < functionParams.length) {
+                                if (typeof context.getParam === 'function') {
+                                    params.push(context.getParam(functionParams[k]));
+                                }
+                                else {
+                                    params.push(context.params[functionParams[k]]);
+                                }
+                                k+=1;
+                            }
+                        }
+                        if (useHttpMethodNamingConvention) {
+                            return fn.apply(controller, params).then(function(result) {
+                                //execute http result
+                                return result.execute(context, callback);
+                            }).catch(function(err) {
+                                return callback.bind(context)(err);
+                            });
+                        }
+                        else {
+                            params.push(function (err, result) {
+                                if (err) {
+                                    //throw error
+                                    callback.call(context, err);
+                                }
+                                else {
+                                    //execute http result
+                                    return result.execute(context, callback);
+                                }
+                            });
+                            //invoke controller method
+                            return fn.apply(controller, params);
+                        }
+                    }
+                    catch(err) {
+                        return callback(err);
                     }
                 });
-                //invoke controller method
-                return fn.apply(controller, params);
             }
         }
-        callback.call(context);
+        else {
+            return callback();
+        }
+
     }
-    catch (e) {
-        callback.call(context, e);
+    catch (error) {
+        callback(error);
     }
 };
 

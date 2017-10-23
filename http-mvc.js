@@ -14,6 +14,7 @@
  */
 var common = require('./common'),
     util = require('util'),
+    _ = require('lodash'),
     htmlWriter = require('./html'),
     xml = require('most-xml'),
     path = require('path'),
@@ -120,8 +121,20 @@ function _json_ignore_null_replacer(key, value) {
  */
 function HttpJsonResult(data)
 {
-    if (data instanceof String)
+    if (data instanceof String) {
         this.data = data;
+    }
+    else if (data instanceof Error) {
+        var keys = Object.getOwnPropertyNames(data);
+        var thisData = {};
+        _.forEach(keys, function(key) {
+            if (process.env.NODE_ENV !== 'development' && key==='stack') {
+                return;
+            }
+            thisData[key] = data[key];
+        });
+        this.data = JSON.stringify(thisData, _json_ignore_null_replacer);
+    }
     else {
         this.data = JSON.stringify(data, _json_ignore_null_replacer);
     }
