@@ -166,7 +166,7 @@ function httpParam(options) {
         descriptor.value.httpParams = descriptor.value.httpParams || { };
         descriptor.value.httpParams[options.name] = _.extend({"type":"Text"}, options);
         if (typeof descriptor.value.httpParam === 'undefined') {
-            descriptor.value.httpParam = new HttpConsumer((context)=> {
+            descriptor.value.httpParam = new HttpConsumer(function (context) {
                 const httpParamValidationFailedCallback = function httpParamValidationFailedCallback(context, httpParam, validationResult) {
                     common.log(_.assign(validationResult, {
                         "param":httpParam,
@@ -180,7 +180,7 @@ function httpParam(options) {
                 const methodParams = common.getFunctionParams(descriptor.value);
                 const httpParams = descriptor.value.httpParams;
                 if (methodParams.length>0) {
-                    let k = 0, httpParam, validator, validationResult, functionParam, contextParam;
+                    var k = 0, httpParam, validator, validationResult, functionParam, contextParam;
                     while (k < methodParams.length) {
                         functionParam = methodParams[k];
                         if (typeof context.getParam === 'function') {
@@ -282,7 +282,7 @@ function httpAuthorize(value) {
             authorize = value;
         }
         if (authorize) {
-            descriptor.value.authorize = new HttpConsumer((context) => {
+            descriptor.value.authorize = new HttpConsumer(function (context) {
                 if (context.user && context.user.name !== 'anonymous') {
                     return Q();
                 }
