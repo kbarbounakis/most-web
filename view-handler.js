@@ -354,7 +354,6 @@ ViewHandler.prototype.processRequest = function (context, callback) {
             //do nothing
             return callback();
         }
-        var app = require('./index');
         //validate request controller
         var controller = self.controller;
         if (controller) {
@@ -390,7 +389,7 @@ ViewHandler.prototype.processRequest = function (context, callback) {
                     }
                 }
                 //execute action handler decorators
-                var actionConsumers = _.filter(_.keys(fn), (x) => {
+                var actionConsumers = _.filter(_.keys(fn), function(x) {
                     return (fn[x] instanceof HttpConsumer);
                 });
                 return async.eachSeries(actionConsumers, function(actionConsumer, cb) {
@@ -399,9 +398,9 @@ ViewHandler.prototype.processRequest = function (context, callback) {
                         if (!_.isPromise(source)) {
                             return cb(new Error("Invalid type. Action consumer result must be a promise."));
                         }
-                        return source.then(()=> {
+                        return source.then(function() {
                             return cb();
-                        }).catch((err)=> {
+                        }).catch(function(err) {
                             return cb(err);
                         });
                     }
@@ -527,7 +526,7 @@ function queryControllerAction(controller, action) {
     var controllerPrototype = Object.getPrototypeOf(controller);
     if (controllerPrototype) {
         //query controller methods that support current http request
-        const protoActionMethods = _.filter(Object.getOwnPropertyNames(controllerPrototype), function(x) {
+        var protoActionMethods = _.filter(Object.getOwnPropertyNames(controllerPrototype), function(x) {
             return (typeof controller[x] === 'function')
                 && (controller[x].httpAction === action)
                 && (controller[x][httpMethodDecorator] === true);
@@ -566,8 +565,6 @@ function queryController(requestUri) {
         //e.g /pages/about where segments are ['','pages','about']
         //and the controller of course is always the second segment.
             return segments[1];
-        //todo:validate workspaces (e.g. /my-workspace/pages/about) where controller segment differs based on the workspace url.
-
     }
     catch (e) {
         throw e;

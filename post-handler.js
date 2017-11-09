@@ -1,21 +1,9 @@
 /**
- * MOST Web Framework
- * A JavaScript Web Framework
- * http://themost.io
- *
- * Copyright (c) 2014, Kyriakos Barbounakis k.barbounakis@gmail.com, Anthi Oikonomou anthioikonomou@gmail.com
- *
- * Released under the BSD3-Clause license
- * Date: 2014-07-02
- */
-/**
  * @private
  */
-var app = require('./index'),
-    formidable = require('formidable'),
-    util = require('util'),
-    querystring = require('querystring'),
-    xml = require('most-xml');
+var formidable = require('formidable');
+var util = require('util');
+var common = require('./common');
 
 /**
  * @class UnknownValue
@@ -25,9 +13,9 @@ function UnknownValue() {
     //
 }
 
-UnknownValue.prototype.valueOf = function() { return null; }
+UnknownValue.prototype.valueOf = function() { return null; };
 
-UnknownValue.prototype.toJSON = function() { return null; }
+UnknownValue.prototype.toJSON = function() { return null; };
 
 UnknownValue.DateTimeRegex = /^(\d{4})(?:-?W(\d+)(?:-?(\d+)D?)?|(?:-(\d+))?-(\d+))(?:[T ](\d+):(\d+)(?::(\d+)(?:\.(\d+))?)?)?(?:Z(-?\d*))?$/g;
 UnknownValue.BooleanTrueRegex = /^true$/ig;
@@ -51,7 +39,7 @@ UnknownValue.convert = function(value) {
     var result;
     if ((typeof value === 'string'))
     {
-        if (value.length==0) {
+        if (value.length===0) {
             result = value
         }
         if (value.match(UnknownValue.BooleanTrueRegex)) {
@@ -80,7 +68,7 @@ UnknownValue.convert = function(value) {
         result = value;
     }
     return result;
-}
+};
 
 
 
@@ -128,7 +116,7 @@ function extend(origin, expr, value, options) {
             extend(descriptor, expr1, value, options);
         }
     }
-    else if (expr.indexOf('[')==0) {
+    else if (expr.indexOf('[')===0) {
         //get property
         var re = /\[(.*?)\]/g;
         match = re.exec(expr);
@@ -141,7 +129,7 @@ function extend(origin, expr, value, options) {
                 if (!util.isArray(origin.value))
                     origin.value = [];
             }
-            if (expr1.length==0) {
+            if (expr1.length===0) {
                 if (origin.value instanceof UnknownValue) {
                     origin.value = {};
                 }
@@ -161,7 +149,7 @@ function extend(origin, expr, value, options) {
             else {
                 if (origin.value instanceof UnknownValue) {
                     origin.value = { };
-                };
+                }
                 origin.value[name] = origin.value[name] || new UnknownValue();
                 descriptor = new UnknownPropertyDescriptor(origin.value, name);
                 extend(descriptor, expr1, value, options);
@@ -171,7 +159,7 @@ function extend(origin, expr, value, options) {
             throw new Error('Invalid object property notation. Expected [name]');
         }
     }
-    else if (/^[\w\-]*$/.test(expr)) {
+    else if (/^[\w-]*$/.test(expr)) {
         if (options.convertValues)
             origin[expr] = UnknownValue.convert(value);
         else
@@ -190,7 +178,7 @@ function extend(origin, expr, value, options) {
  */
 function parseForm(form) {
     var result = {};
-    if (typeof form === 'undefined' || form==null)
+    if (typeof form === 'undefined' || form===null)
         return result;
     var keys = Object.keys(form);
     keys.forEach(function(key) {
@@ -241,7 +229,7 @@ PostHandler.prototype.beginRequest = function(context, callback) {
         }
     }
     catch  (e) {
-        console.log(e);
+        common.log(e);
         callback(new Error("An internal server error occured while parsing request data."));
     }
 

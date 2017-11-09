@@ -1,21 +1,11 @@
 /**
- * MOST Web Framework
- * A JavaScript Web Framework
- * http://themost.io
- *
- * Copyright (c) 2014, Kyriakos Barbounakis k.barbounakis@gmail.com, Anthi Oikonomou anthioikonomou@gmail.com
- *
- * Released under the BSD3-Clause license
- * Date: 2014-06-09
- */
-/**
  * @ignore
  */
-var util = require('util'),
-    mvc = require('./http-mvc'),
-    xml = require('most-xml'),
-    string = require('string'),
-    common = require('./common');
+var util = require('util');
+var mvc = require('./http-mvc');
+var _ = require('lodash');
+var pluralize = require('pluralize');
+var common = require('./common');
 /**
  * @classdesc HttpDataController class describes a common MOST Web Framework data controller.
  * This controller is inherited by default from all data models. It offers a set of basic actions for CRUD operations against data objects
@@ -207,8 +197,8 @@ HttpDataController.prototype.edit = function (callback) {
                 self.model.save(target, function(err)
                 {
                     if (err) {
-                        console.log(err);
-                        console.log(err.stack);
+                        common.log(err);
+                        common.log(err.stack);
                         callback(common.HttpException.create(err));
                     }
                     else {
@@ -392,7 +382,7 @@ HttpDataController.prototype.show = function (callback) {
                 q.take(1, function (err, result) {
                     try {
                         if (err) {
-                            callback(common.httpError(e));
+                            callback(common.httpError(err));
                         }
                         else {
                             if (result.length>0)
@@ -455,8 +445,7 @@ HttpDataController.prototype.remove = function (callback) {
 HttpDataController.prototype.filter = function (callback) {
 
     var self = this, params = self.context.params;
-
-    if (typeof self.model !== 'object' || self.model == null) {
+    if (typeof self.model !== 'object' || self.model === null) {
         callback(new Error('Model is of the wrong type or undefined.'));
         return;
     }
@@ -547,7 +536,7 @@ HttpDataController.prototype.index = function(callback)
     try {
         var self = this, context = self.context,
             top = parseInt(context.params.attr('$top')),
-            take = top > 0 ? top : (top == -1 ? top : 25);
+            take = top > 0 ? top : (top === -1 ? top : 25);
         var count = /^true$/ig.test(context.params.attr('$inlinecount')) || false,
             first = /^true$/ig.test(context.params.attr('$first')) || false,
             asArray = /^true$/ig.test(context.params.attr('$array')) || false;
@@ -743,83 +732,157 @@ HttpDataController.prototype.index = function(callback)
  */
 HttpDataController.prototype.association = function(callback) {
     try {
-        var self = this, parent = self.context.params.parent, model = self.context.params.model;
-        if (common.isNullOrUndefined(parent) || common.isNullOrUndefined(model)) {
-            callback(new common.HttpBadRequest());
-            return;
+        var self = this,
+            parent = self.context.params.parent,
+            model = self.context.params.model;
+        if (_.isNil(parent) || _.isNil(model)) {
+            return callback(new common.HttpBadRequest());
         }
-        self.model.where(self.model.primaryKey).equal(parent).select([self.model.primaryKey]).first(function(err, result) {
-            if (err) {
-                common.log(err);
-                callback(new common.HttpServerError());
-                return;
-            }
-            if (common.isNullOrUndefined(result)) {
-                callback(new common.HttpNotFoundException());
-                return;
-            }
-            //get parent object (DataObject)
-            var obj = self.model.convert(result);
-            var associatedModel = self.context.model(model);
-            if (common.isNullOrUndefined(associatedModel)) {
-                callback(new common.HttpNotFoundException());
-                return;
-            }
-            /**
-             * Search for object junction
-             */
-            var field = self.model.attributes.filter(function(x) { return x.type === associatedModel.name; })[0], mapping;
-            if (field) {
-                /**
-                 * Get association mapping fo this field
-                 * @type {DataAssociationMapping}
-                 */
-                mapping = self.model.inferMapping(field.name);
-                if (mapping) {
-                    if ((mapping.parentModel===self.model.name) && (mapping.associationType==='junction')) {
-                        /**
-                         * @type {DataQueryable}
-                         */
-                        var junction = obj.property(field.name);
-                        junction.model.filter(self.context.params, function(err, q) {
-                            if (err) {
-                                callback(err);
+        return self.model.where(self.model.primaryKey).equal(parent).select(self.model.primaryKey).getTypedItem()
+            .then(function(obj) {
+                if (_.isNil(obj)) {
+                    return callback(new common.HttpNotFoundException());
+                }
+                //get primary key
+                var key = obj[self.model.primaryKey];
+                //get mapping
+                var mapping = self.model.inferMapping(model);
+                //get count parameter
+                var count = common.parseBoolean(self.context.params.$inlinecount);
+                if (_.isNil(mapping)) {
+                    //try to find associated model
+                    //get singular model name
+                    var otherModelName = pluralize.singular(model);
+                    //search for model with this name
+                    var otherModel = self.context.model(otherModelName);
+                    if (otherModel) {
+                        var otherFields = _.filter(otherModel.attributes, function(x) {
+                            return x.type === self.model.name;
+                        });
+                        if (otherFields.length>1) {
+                            return callback(new common.HttpMethodNotAllowed("Multiple associations found"));
+                        }
+                        else if (otherFields.length === 1) {
+                            var otherField = otherFields[0];
+                            mapping = otherModel.inferMapping(otherField.name);
+                            if (mapping && mapping.associationType === 'junction') {
+                                var attr;
+                                //search model for attribute that has an association of type junction with child model
+                                if (mapping.parentModel === otherModel.name) {
+                                    attr = _.find(otherModel.attributes, function(x) {
+                                        return x.name === otherField.name;
+                                    });
+                                }
+                                else {
+                                    attr = _.find(self.model.attributes, function(x) {
+                                        return x.type === otherModel.name;
+                                    });
+                                }
+                                if (_.isNil(attr)) {
+                                    return callback(new common.HttpNotFoundException("Association not found"));
+                                }
+                                if (attr) {
+                                    model = attr.name;
+                                    mapping = self.model.inferMapping(attr.name);
+                                }
+                            }
+                        }
+                    }
+                    if (_.isNil(mapping)) {
+                        return callback(new common.HttpNotFoundException("Association not found"));
+                    }
+                }
+                if (mapping.associationType === 'junction') {
+                    /**
+                     * @type {DataQueryable}
+                     */
+                    var junction = obj.property(model);
+                    return junction.model.filter(self.context.params, function (err, q) {
+                        if (err) {
+                            callback(err);
+                        }
+                        else {
+                            //merge properties
+                            if (q.query.$select) {
+                                junction.query.$select = q.query.$select;
+                            }
+                            if (q.$expand) {
+                                junction.$expand = q.$expand;
+                            }
+                            if (q.query.$group) {
+                                junction.query.$group = q.query.$group;
+                            }
+                            if (q.query.$order) {
+                                junction.query.$order = q.query.$order;
+                            }
+                            if (q.query.$prepared) {
+                                junction.query.$where = q.query.$prepared;
+                            }
+                            if (q.query.$skip) {
+                                junction.query.$skip = q.query.$skip;
+                            }
+                            if (q.query.$take) {
+                                junction.query.$take = q.query.$take;
+                            }
+                            if (count) {
+                                junction.list(function (err, result) {
+                                    if (err) {
+                                        return callback(err);
+                                    }
+                                    return callback(null, self.result(result));
+                                });
                             }
                             else {
-                                //merge properties
-                                if (q.query.$select) { junction.query.$select = q.query.$select; }
-                                if (q.query.$group) { junction.query.$group = q.query.$group; }
-                                if (q.query.$order) { junction.query.$order = q.query.$order; }
-                                if (q.query.$prepared) { junction.query.$where = q.query.$prepared; }
-                                if (q.query.$skip) { junction.query.$skip = q.query.$skip; }
-                                if (q.query.$take) { junction.query.$take = q.query.$take; }
-                                junction.list(function(err, result) {
-                                    callback(err, self.result(result));
+                                junction.getItems().then(function (result) {
+                                    return callback(null, self.result(result));
+                                }).catch(function (err) {
+                                    return callback(err);
+                                });
+                            }
+
+                        }
+                    });
+                }
+                else if (mapping.parentModel === self.model.name && mapping.associationType === 'association') {
+                    //get associated model
+                    var associatedModel = self.context.model(mapping.childModel);
+                    if (_.isNil(associatedModel)) {
+                        return callback(new common.HttpNotFoundException("Associated model not found"));
+                    }
+                    return associatedModel.filter(self.context.params,
+                        /**
+                         * @param {Error} err
+                         * @param {DataQueryable} q
+                         * @returns {*}
+                         */
+                        function (err, q) {
+                            if (err) {
+                                return callback(err);
+                            }
+                            if (count) {
+                                q.where(mapping.childField).equal(key).list(function (err, result) {
+                                    if (err) {
+                                        return callback(err);
+                                    }
+                                    return callback(null, self.result(result));
+                                });
+                            }
+                            else {
+                                q.where(mapping.childField).equal(key).getItems().then(function (result) {
+                                    return callback(null, self.result(result));
+                                }).catch(function (err) {
+                                    return callback(err);
                                 });
                             }
                         });
-                        return;
-                    }
-                }
-            }
-            field = associatedModel.attributes.filter(function(x) { return x.type === self.model.name; })[0];
-            if (common.isNullOrUndefined(field)) {
-                callback(new common.HttpNotFoundException());
-                return;
-            }
-            //get field mapping
-            mapping = associatedModel.inferMapping(field.name);
-            associatedModel.filter(self.context.params, function(err, q) {
-                if (err) {
-                    callback(err);
                 }
                 else {
-                    q.where(mapping.childField).equal(parent).list(function(err, result) {
-                        callback(err, self.result(result));
-                    });
+                    return callback(new common.HttpNotFoundException());
                 }
+            
+        }).catch(function (err) {
+                return callback(err);
             });
-        });
     }
     catch(e) {
         common.log(e);

@@ -42,12 +42,29 @@
     "most-data": "~1.8.0",
     "most-xml": "~0.3.0",
     "node-cache": "^1.1.0",
+    "pluralize": "^7.0.0",
     "q": "^1.4.1",
     "string": "1.5.1",
     "symbol": "^0.3.1"
   },
+  "devDependencies": {
+    "eslint": "^4.10.0"
+  },
   "main": "index",
   "scripts": {},
   "_id": "most-web@1.7.0",
-  "_from": "most-web@"
+  "_from": "most-web@",
+  "eslintConfig": {
+    "env": {
+      "browser": true,
+      "node": true,
+      "es6": false,
+      "jquery": true
+    },
+    "globals": {
+      "describe": false,
+      "it": false
+    },
+    "extends": "eslint:recommended"
+  }
 }
