@@ -241,7 +241,14 @@ HttpDataController.prototype.edit = function (callback) {
             var filter = null, id = context.params.attr('id');
             if (id) {
                 //create the equivalent open data filter
-                filter = util.format('%s eq %s',self.model.primaryKey,id);
+                return self.model.where(self.model.primaryKey).equal(id).getItem().then(function(result) {
+                    if (_.isNil(result)) {
+                        return callback(null, self.result());
+                    }
+                    return callback(null, self.result([result]));
+                }).catch(function(err) {
+                    return callback(err);
+                });
             }
             else {
                 //get the requested open data filter
