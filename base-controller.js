@@ -12,17 +12,18 @@
  * @ignore
  */
 var util = require('util'),
-    mvc = require('./http-mvc'),
-    common = require('./common');
+    HttpController = require('./http-mvc').HttpController;
 /**
  * @classdesc HttpBaseController class describes a base controller.
  * @class
  * @constructor
- * @memberOf module:most-web.controllers
+ * @param {HttpContext} context
  */
-function HttpBaseController() {
-    //
+function HttpBaseController(context) {
+    HttpBaseController.super_.bind(this)(context);
 }
-util.inherits(HttpBaseController, mvc.HttpController);
+util.inherits(HttpBaseController, HttpController);
 
-if (typeof module !== 'undefined') module.exports = HttpBaseController;
+if (typeof module !== 'undefined') {
+    module.exports = HttpBaseController;
+}

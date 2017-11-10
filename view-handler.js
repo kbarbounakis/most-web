@@ -513,6 +513,19 @@ function isValidControllerAction(controller, action) {
     return false;
 }
 
+function getOwnPropertyNames_(obj) {
+    if (typeof obj === 'undefined' || obj === null) {
+        return [];
+    }
+    var ownPropertyNames = [];
+    var proto = Object.getPrototypeOf(obj);
+    while(proto) {
+        ownPropertyNames.push.apply(ownPropertyNames, Object.getOwnPropertyNames(proto));
+        proto = Object.getPrototypeOf(proto);
+    }
+    return ownPropertyNames;
+}
+
 /**
  * @function
  * @private
@@ -526,7 +539,7 @@ function queryControllerAction(controller, action) {
     var controllerPrototype = Object.getPrototypeOf(controller);
     if (controllerPrototype) {
         //query controller methods that support current http request
-        var protoActionMethods = _.filter(Object.getOwnPropertyNames(controllerPrototype), function(x) {
+        var protoActionMethods = _.filter(getOwnPropertyNames_(controllerPrototype), function(x) {
             return (typeof controller[x] === 'function')
                 && (controller[x].httpAction === action)
                 && (controller[x][httpMethodDecorator] === true);

@@ -167,7 +167,7 @@ function httpParam(options) {
         descriptor.value.httpParams[options.name] = _.extend({"type":"Text"}, options);
         if (typeof descriptor.value.httpParam === 'undefined') {
             descriptor.value.httpParam = new HttpConsumer(function (context) {
-                const httpParamValidationFailedCallback = function httpParamValidationFailedCallback(context, httpParam, validationResult) {
+                var httpParamValidationFailedCallback = function httpParamValidationFailedCallback(context, httpParam, validationResult) {
                     common.log(_.assign(validationResult, {
                         "param":httpParam,
                         "request": {
@@ -177,8 +177,8 @@ function httpParam(options) {
                     }));
                     return Q.reject(new common.HttpBadRequest('Bad request parameter', httpParam.message || validationResult.message));
                 };
-                const methodParams = common.getFunctionParams(descriptor.value);
-                const httpParams = descriptor.value.httpParams;
+                var methodParams = common.getFunctionParams(descriptor.value);
+                var httpParams = descriptor.value.httpParams;
                 if (methodParams.length>0) {
                     var k = 0, httpParam, validator, validationResult, functionParam, contextParam;
                     while (k < methodParams.length) {
@@ -293,7 +293,15 @@ function httpAuthorize(value) {
     };
 }
 
-
+/**
+ *
+ * @param {Function} decorator
+ * @param {Object} proto
+ * @param {string} method
+ */
+function applyMethodDecorator(decorator, proto, method) {
+    decorator(proto, method, Object.getOwnPropertyDescriptor(proto, method));
+}
 
 module.exports.DecoratorError = DecoratorError;
 module.exports.httpGet = httpGet;
@@ -308,3 +316,4 @@ module.exports.httpController = httpController;
 module.exports.httpParamAlias = httpParamAlias;
 module.exports.httpParam = httpParam;
 module.exports.httpAuthorize = httpAuthorize;
+module.exports.applyMethodDecorator = applyMethodDecorator;

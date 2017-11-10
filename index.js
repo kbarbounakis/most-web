@@ -1753,7 +1753,8 @@ web.controllers = {
         HttpController: mvc.HttpController,
         HttpBaseController: require('./base-controller'),
         HttpDataController: require('./data-controller'),
-        HttpLookupController: require('./lookup-controller')
+        HttpLookupController: require('./lookup-controller'),
+        HttpServiceControll: require('./service-controller')
 };
 
 web.views = {

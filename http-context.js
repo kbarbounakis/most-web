@@ -16,7 +16,6 @@ var path = require('path'),
     util = require('util'),
     fs = require('fs'),
     da = require('most-data'),
-    array = require('most-array'),
     url = require('url'),
     common = require('./common');
 /**
