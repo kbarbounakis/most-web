@@ -1453,14 +1453,19 @@ HttpApplication.prototype.start = function (options, callback) {
     }
 };
 /**
- * @param {string} name
+ * @param {string|Function} name
  * @param {function=} ctor - The class constructor associated with this controller
  * @returns {HttpApplication|function()}
  */
 HttpApplication.prototype.service = function(name, ctor) {
-    if (typeof ctor === 'undefined')
-        return this.module.service(name);
-    this.module.service(name, ctor);
+    if (typeof name !== 'function' && typeof name !== 'string') {
+        throw new TypeError('Service name must be a string or function.')
+    }
+    var serviceName= (typeof name === 'function') ?  name.name : name;
+    if (typeof ctor === 'undefined') {
+        return this.module.service(serviceName);
+    }
+    this.module.service(serviceName, ctor);
     return this;
 };
 

@@ -295,12 +295,33 @@ function httpAuthorize(value) {
 
 /**
  *
- * @param {Function} decorator
- * @param {Object} proto
- * @param {string} method
+ * @param {Object|Function} proto - The constructor function of a class or the prototype of a class
+ * @param {string} key - The name of the property or method where the decorator will be included
+ * @param {Function} decorator - The decorator to be included
  */
-function applyMethodDecorator(decorator, proto, method) {
-    decorator(proto, method, Object.getOwnPropertyDescriptor(proto, method));
+function defineDecorator(proto, key, decorator) {
+    if ((typeof proto !== 'object') && (typeof proto !== 'function')) {
+        throw new DecoratorError('Invalid prototype. Expected object or function.');
+    }
+    if (typeof key !== 'string') {
+        throw new DecoratorError('Invalid property name. Expected string.');
+    }
+    if (typeof decorator !== 'function') {
+        throw new DecoratorError('Invalid decorator. Expected function.');
+    }
+    decorator(proto, key, Object.getOwnPropertyDescriptor(proto, key));
+}
+//extend object
+if (typeof Object.defineDecorator === 'undefined') {
+    /**
+     * @function defineDecorator
+     * @param {Object|Function} proto - The constructor function of a class or the prototype of a class
+     * @param {string} key - The name of the property or method where the decorator will be included
+     * @param {Function} decorator - The decorator to be included
+     * @memberOf Object
+     * @static
+     */
+    Object.defineDecorator = defineDecorator;
 }
 
 module.exports.DecoratorError = DecoratorError;
@@ -316,4 +337,4 @@ module.exports.httpController = httpController;
 module.exports.httpParamAlias = httpParamAlias;
 module.exports.httpParam = httpParam;
 module.exports.httpAuthorize = httpAuthorize;
-module.exports.applyMethodDecorator = applyMethodDecorator;
+module.exports.defineDecorator = defineDecorator;
