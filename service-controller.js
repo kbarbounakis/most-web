@@ -15,6 +15,9 @@ var parseInteger = require('./common').parseInt;
 var Q = require('q');
 var _ = require('lodash');
 var httpGet = require('./decorators').httpGet;
+var httpPost = require('./decorators').httpPost;
+var httpPut = require('./decorators').httpPut;
+var httpPatch = require('./decorators').httpPatch;
 var httpAction = require('./decorators').httpAction;
 var httpController = require('./decorators').httpController;
 var defineDecorator = require('./decorators').defineDecorator;
@@ -136,6 +139,43 @@ HttpServiceController.prototype.getItem = function(entitySet, id) {
 
 defineDecorator(HttpServiceController.prototype, 'getItem', httpGet());
 defineDecorator(HttpServiceController.prototype, 'getItem', httpAction("item"));
+
+
+/**
+ *
+ * @param {string} entitySet
+ * @param {*} id
+ */
+HttpServiceController.prototype.patchItem = function(entitySet, id, item) {
+    var self = this;
+    var context = self.context;
+    try {
+        //get entity set
+        var thisEntitySet = this.getBuilder().getEntitySet(entitySet);
+        if (_.isNil(thisEntitySet)) {
+            return Q.reject(new HttpNotFoundException("EntitySet not found"));
+        }
+        /**
+         * @type {DataModel}
+         */
+        var model = context.model(thisEntitySet.entityType.name);
+        if (_.isNil(model)) {
+            return Q.reject(new HttpNotFoundException("Entity not found"));
+        }
+        return model.where(model.primaryKey).equal(id).getItem().then(function (result) {
+            if (_.isNil(result)) {
+                return Q.reject(new HttpNotFoundException());
+            }
+            return Q.resolve(self.json(thisEntitySet.mapInstance(context,result)));
+        });
+    }
+    catch (err) {
+        return Q.reject(err);
+    }
+};
+
+defineDecorator(HttpServiceController.prototype, 'patchItem', httpPatch());
+defineDecorator(HttpServiceController.prototype, 'patchItem', httpAction("item"));
 
 
 /**

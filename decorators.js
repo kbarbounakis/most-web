@@ -63,6 +63,15 @@ function httpPost() {
     }
 }
 
+function httpPatch() {
+    return function (target, key, descriptor) {
+        if (typeof descriptor.value === 'function') {
+            descriptor.value.httpPatch = true;
+        }
+        return descriptor;
+    }
+}
+
 function httpPut() {
     return function (target, key, descriptor) {
         if (typeof descriptor.value === 'function') {
