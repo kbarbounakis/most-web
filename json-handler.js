@@ -12,8 +12,17 @@
  * @ignore
  */
 var bodyParser = require('body-parser'), jsonParser;
+var _ = require('lodash');
 function JsonHandler() {
 
+}
+var DateTimeRegex = /^(\d{4})(?:-?W(\d+)(?:-?(\d+)D?)?|(?:-(\d+))?-(\d+))(?:[T ](\d+):(\d+)(?::(\d+)(?:\.(\d+))?)?)?(?:Z(-?\d*))?([+-](\d+):(\d+))?$/g;
+function reviveDates(key, value){
+    var match;
+    if (typeof value === "string" && DateTimeRegex.test(value) ) {
+        return new Date(value);
+    }
+    return value;
 }
 
 JsonHandler.prototype.beginRequest = function(context, callback) {
@@ -29,7 +38,9 @@ JsonHandler.prototype.beginRequest = function(context, callback) {
             //ensure json settings (the default limit is 100kb)
             context.application.config.settings.json = context.application.config.settings.json || { limit:102400 };
             //get json parser
-            jsonParser = bodyParser.json(context.application.config.settings.json);
+            jsonParser = bodyParser.json(_.assign(context.application.config.settings.json, {
+                reviver:reviveDates
+            }));
         }
         //parse request data
         jsonParser(request, response , function(err) {

@@ -47,7 +47,7 @@ function ODataModelBuilderConfiguration() {
 /**
  *
  * @param {HttpApplication} app
- * @returns Promise
+ * @returns Promise<ODataModelBuilder>
  */
 ODataModelBuilderConfiguration.config = function(app) {
     if (typeof app === 'undefined' || app === null) {

@@ -17,7 +17,7 @@ UnknownValue.prototype.valueOf = function() { return null; };
 
 UnknownValue.prototype.toJSON = function() { return null; };
 
-UnknownValue.DateTimeRegex = /^(\d{4})(?:-?W(\d+)(?:-?(\d+)D?)?|(?:-(\d+))?-(\d+))(?:[T ](\d+):(\d+)(?::(\d+)(?:\.(\d+))?)?)?(?:Z(-?\d*))?$/g;
+UnknownValue.DateTimeRegex = /^(\d{4})(?:-?W(\d+)(?:-?(\d+)D?)?|(?:-(\d+))?-(\d+))(?:[T ](\d+):(\d+)(?::(\d+)(?:\.(\d+))?)?)?(?:Z(-?\d*))?([+-](\d+):(\d+))?$/g;
 UnknownValue.BooleanTrueRegex = /^true$/ig;
 UnknownValue.BooleanFalseRegex = /^false$/ig;
 UnknownValue.NullRegex = /^null$/ig;
