@@ -338,6 +338,7 @@ module.exports.httpGet = httpGet;
 module.exports.httpAny = httpAny;
 module.exports.httpPost = httpPost;
 module.exports.httpPut = httpPut;
+module.exports.httpPatch = httpPatch;
 module.exports.httpDelete = httpDelete;
 module.exports.httpOptions = httpOptions;
 module.exports.httpHead = httpHead;
