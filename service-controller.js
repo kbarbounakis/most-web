@@ -12,6 +12,7 @@ var util = require('util');
 var HttpNotFoundException = require('./common').HttpNotFoundException;
 var HttpForbiddenException = require('./common').HttpForbiddenException;
 var HttpMethodNotAllowed = require('./common').HttpMethodNotAllowed;
+var HttpException = require('./common').HttpException;
 var parseBoolean = require('./common').parseBoolean;
 var pluralize = require('pluralize');
 var Q = require('q');
@@ -223,7 +224,6 @@ HttpServiceController.prototype.patchItem = function(entitySet, id) {
 defineDecorator(HttpServiceController.prototype, 'patchItem', httpPatch());
 defineDecorator(HttpServiceController.prototype, 'patchItem', httpAction("item"));
 
-
 /**
  *
  * @param {string} entitySet
@@ -280,7 +280,7 @@ HttpServiceController.prototype.deleteItem = function(entitySet, id) {
 };
 
 defineDecorator(HttpServiceController.prototype, 'deleteItem', httpDelete());
-defineDecorator(HttpServiceController.prototype, 'deleteItem', httpAction("item"));
+defineDecorator(HttpServiceController.prototype, 'patchItem', httpAction("item"));
 
 /**
  *
@@ -319,16 +319,16 @@ HttpServiceController.prototype.postItem = function(entitySet) {
 
 defineDecorator(HttpServiceController.prototype, 'postItem', httpPost());
 defineDecorator(HttpServiceController.prototype, 'postItem', httpPut());
-defineDecorator(HttpServiceController.prototype, 'postItem', httpAction("items"));
+defineDecorator(HttpServiceController.prototype, 'postItem', httpAction("item"));
 
 
 /**
  *
  * @param {string} entitySet
- * @param {string} property
+ * @param {string} navigationProperty
  * @param {*} id
  */
-HttpServiceController.prototype.getProperty = function(entitySet, property, id) {
+HttpServiceController.prototype.getNavigationProperty = function(entitySet, navigationProperty, id) {
     var self = this;
     var context = self.context;
     var model;
@@ -349,7 +349,7 @@ HttpServiceController.prototype.getProperty = function(entitySet, property, id) 
                             if (_.isNil(value)) {
                                 return Q.reject(new HttpNotFoundException());
                             }
-                            return self.getProperty(entitySet, property, value);
+                            return self.getNavigationProperty(entitySet, navigationProperty, value);
                         });
                     });
                 }
@@ -371,13 +371,13 @@ HttpServiceController.prototype.getProperty = function(entitySet, property, id) 
                 //get primary key
                 var key = obj[model.primaryKey];
                 //get mapping
-                var mapping = model.inferMapping(property);
+                var mapping = model.inferMapping(navigationProperty);
                 //get count parameter
                 var count = parseBoolean(self.context.params.$inlinecount);
                 if (_.isNil(mapping)) {
                     //try to find associated model
                     //get singular model name
-                    var otherModelName = pluralize.singular(property);
+                    var otherModelName = pluralize.singular(navigationProperty);
                     //search for model with this name
                     var otherModel = self.context.model(otherModelName);
                     if (otherModel) {
@@ -421,7 +421,7 @@ HttpServiceController.prototype.getProperty = function(entitySet, property, id) 
                     /**
                      * @type {DataQueryable}
                      */
-                    var junction = obj.property(property);
+                    var junction = obj.property(navigationProperty);
                     return junction.model.filter(self.context.params, function (err, q) {
                         if (err) {
                             return Q.reject(err);
@@ -493,9 +493,9 @@ HttpServiceController.prototype.getProperty = function(entitySet, property, id) 
                     if (_.isNil(parentModel)) {
                         return Q.reject(new HttpNotFoundException("Parent associated model not found"));
                     }
-                    return model.where(model.primaryKey).equal(obj.id).select(model.primaryKey,property).expand(property).getItem().then(function(result) {
+                    return model.where(model.primaryKey).equal(obj.id).select(model.primaryKey,navigationProperty).expand(navigationProperty).getItem().then(function(result) {
                         var parentEntitySet = self.getBuilder().getEntityTypeEntitySet(parentModel.name);
-                        return Q.resolve(self.json(parentEntitySet.mapInstance(context,result[property])));
+                        return Q.resolve(self.json(parentEntitySet.mapInstance(context,result[navigationProperty])));
                     });
 
                 }
@@ -510,9 +510,20 @@ HttpServiceController.prototype.getProperty = function(entitySet, property, id) 
     }
 };
 
-defineDecorator(HttpServiceController.prototype, 'getProperty', httpGet());
-defineDecorator(HttpServiceController.prototype, 'getProperty', httpAction("property"));
+defineDecorator(HttpServiceController.prototype, 'getNavigationProperty', httpGet());
+defineDecorator(HttpServiceController.prototype, 'getNavigationProperty', httpAction("navigationProperty"));
 
+/**
+ *
+ * @param {string} entitySet
+ * @param {string} entityAction
+ * @param {*} id
+ */
+HttpServiceController.prototype.getEntityAction = function(entitySet, entityAction, id) {
+    return Q.reject(new HttpException(502));
+};
+defineDecorator(HttpServiceController.prototype, 'getEntityAction', httpGet());
+defineDecorator(HttpServiceController.prototype, 'getEntityAction', httpAction("entityAction"));
 
 /**
  *

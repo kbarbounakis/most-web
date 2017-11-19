@@ -282,7 +282,7 @@ ViewHandler.prototype.preflightRequest = function (context, callback) {
             var allowCredentials = true,
                 allowOrigin="*",
                 allowHeaders = "Origin, X-Requested-With, Content-Type, Content-Language, Accept, Accept-Language, Authorization",
-                allowMethods = "GET, OPTIONS, PUT, POST, DELETE";
+                allowMethods = "GET, OPTIONS, PUT, POST, PATCH, DELETE";
 
             /**
              * @private
@@ -513,14 +513,17 @@ function isValidControllerAction(controller, action) {
     return false;
 }
 
-function getOwnPropertyNames_(obj) {
+function getControllerPropertyNames_(obj) {
     if (typeof obj === 'undefined' || obj === null) {
         return [];
     }
     var ownPropertyNames = [];
-    var proto = Object.getPrototypeOf(obj);
+    //get object methods
+    var proto = obj;
     while(proto) {
-        ownPropertyNames.push.apply(ownPropertyNames, Object.getOwnPropertyNames(proto));
+        ownPropertyNames = ownPropertyNames.concat(Object.getOwnPropertyNames(proto).filter( function(x) {
+            return ownPropertyNames.indexOf(x)<0;
+        }));
         proto = Object.getPrototypeOf(proto);
     }
     return ownPropertyNames;
@@ -537,12 +540,13 @@ function queryControllerAction(controller, action) {
     var httpMethodDecorator = _.camelCase('http-' + controller.context.request.method),
          method = _.camelCase(action);
     var controllerPrototype = Object.getPrototypeOf(controller);
+    var controllerPropertyNames = getControllerPropertyNames_(controllerPrototype);
     if (controllerPrototype) {
         //query controller methods that support current http request
-        var protoActionMethods = _.filter(getOwnPropertyNames_(controllerPrototype), function(x) {
+        var protoActionMethods = _.filter(controllerPropertyNames, function(x) {
             return (typeof controller[x] === 'function')
                 && (controller[x].httpAction === action)
-                && (controller[x][httpMethodDecorator] === true);
+                && controller[x][httpMethodDecorator];
         });
         //if an action was found for the given criteria
         if (protoActionMethods.length===1) {

@@ -156,6 +156,7 @@ function httpParamAlias(name, alias) {
  * @property {string} message
  * @constructor
  */
+// eslint-disable-next-line no-unused-vars
 function HttpParamAttributeOptions() {
 
 }
