@@ -435,10 +435,7 @@ HttpViewResult.prototype.execute = function(context, callback)
 {
     var self = this;
     callback = callback || function() {};
-    var app = require('./index'),
-        array = require('most-array'),
-        util = require('util'),
-        fs = require('fs');
+    var app = require('./index');
     /**
      * @type ServerResponse
      * */

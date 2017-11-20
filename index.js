@@ -1203,43 +1203,38 @@ function onHtmlError(context, err, callback) {
             return;
         }
         //HTML custom errors
-        if (/text\/html/g.test(request.headers.accept)) {
-            fs.readFile(path.join(__dirname, './http-error.html.ejs'), 'utf8', function (readErr, data) {
-                if (readErr) {
-                    //log process error
-                    common.log(readErr);
-                    //continue error execution
-                    callback(err);
-                    return;
+        fs.readFile(path.join(__dirname, './http-error.html.ejs'), 'utf8', function (readErr, data) {
+            if (readErr) {
+                //log process error
+                common.log(readErr);
+                //continue error execution
+                callback(err);
+                return;
+            }
+            //compile data
+            var str;
+            try {
+                if (err instanceof common.HttpException) {
+                    str = ejs.render(data, { error:err });
                 }
-                //compile data
-                var str;
-                try {
-                    if (err instanceof common.HttpException) {
-                        str = ejs.render(data, { error:err });
-                    }
-                    else {
-                        var httpErr = new common.HttpException(500, null, err.message);
-                        httpErr.stack = err.stack;
-                        str = ejs.render(data, {error: httpErr});
-                    }
+                else {
+                    var httpErr = new common.HttpException(500, null, err.message);
+                    httpErr.stack = err.stack;
+                    str = ejs.render(data, {error: httpErr});
                 }
-                catch (e) {
-                    common.log(e);
-                    //continue error execution
-                    callback(err);
-                    return;
-                }
-                //write status header
-                response.writeHead(err.status || 500 , { "Content-Type": "text/html" });
-                response.write(str);
-                response.end();
-                callback();
-            });
-        }
-        else {
-            callback(err);
-        }
+            }
+            catch (e) {
+                common.log(e);
+                //continue error execution
+                callback(err);
+                return;
+            }
+            //write status header
+            response.writeHead(err.status || 500 , { "Content-Type": "text/html" });
+            response.write(str);
+            response.end();
+            callback();
+        });
     }
     catch (e) {
         //log process error

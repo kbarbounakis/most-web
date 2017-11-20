@@ -283,7 +283,6 @@ ViewHandler.prototype.preflightRequest = function (context, callback) {
                 allowOrigin="*",
                 allowHeaders = "Origin, X-Requested-With, Content-Type, Content-Language, Accept, Accept-Language, Authorization",
                 allowMethods = "GET, OPTIONS, PUT, POST, PATCH, DELETE";
-
             /**
              * @private
              * @type {{allowOrigin:string,allowHeaders:string,allowCredentials:Boolean,allowMethods:string,allow:string}|*}

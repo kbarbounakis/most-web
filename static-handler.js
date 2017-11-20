@@ -100,7 +100,7 @@ StaticHandler.prototype.preRequestHandlerExecute = function(context)
 StaticHandler.prototype.unmodifiedRequest = function(context, executionPath, callback) {
     try {
         var requestETag = context.request.headers['if-none-match'];
-        if (typeof requestETag === 'undefined' || requestETag == null) {
+        if (typeof requestETag === 'undefined' || requestETag === null) {
             callback(null, false);
             return;
         }
@@ -120,7 +120,7 @@ StaticHandler.prototype.unmodifiedRequest = function(context, executionPath, cal
                                 var md5 = crypto.createHash('md5');
                                 md5.update(stats.mtime.toString());
                                 var responseETag = md5.digest('base64');
-                                return callback(null, (requestETag==responseETag));
+                                return callback(null, (requestETag===responseETag));
                             }
                         }
                     });
@@ -186,7 +186,7 @@ StaticHandler.prototype.processRequest = function(context, callback)
         }
             //get current execution path and validate once again file presence and MIME type
         var stats = context.request.currentExecutionFileStats;
-        if (typeof stats === 'undefined' || stats == null) {
+        if (typeof stats === 'undefined' || stats === null) {
             callback(new app.common.HttpServerError('Invalid request handler.'));
             return;
         }
@@ -201,7 +201,7 @@ StaticHandler.prototype.processRequest = function(context, callback)
             md5.update(stats.mtime.toString());
             var responseETag = md5.digest('base64');
             if (requestETag)
-                if (requestETag==responseETag) {
+                if (requestETag===responseETag) {
                     //context.response.writeHead(304, { 'Last-Modified':stats.mtime.toUTCString() });
                     context.response.writeHead(304, { });
                     context.response.end();
@@ -214,14 +214,14 @@ StaticHandler.prototype.processRequest = function(context, callback)
             var mimes = app.current.config.mimes;
             var contentType = null, contentEncoding=null;
             //find MIME type by extension
-            var mime =mimes.filter(function(x) { return x.extension==extensionName; })[0];
+            var mime =mimes.filter(function(x) { return x.extension===extensionName; })[0];
             if (mime) {
                 contentType = mime.type;
                 if (mime.encoding)
                     contentEncoding = mime.encoding;
             }
             //throw exception (MIME not found or access denied)
-            if (contentType==null) {
+            if (contentType===null) {
                 callback(new app.common.HttpForbiddenException())
             }
             else {

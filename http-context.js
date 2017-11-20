@@ -97,6 +97,9 @@ function HttpContext(httpRequest, httpResponse) {
             if (result) {
                 return result.substr(1).toLowerCase();
             }
+            else if (self.request.route && self.request.route.format) {
+                return self.request.route.format;
+            }
             else {
                 //get mime type
                 var mime = self.mime;
