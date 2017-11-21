@@ -9,9 +9,11 @@
  * Date: 2014-11-10
  */
 var util = require('util');
+var DataQueryable = require('most-data/data-queryable').DataQueryable;
 var HttpNotFoundException = require('./common').HttpNotFoundException;
 var HttpForbiddenException = require('./common').HttpForbiddenException;
 var HttpMethodNotAllowed = require('./common').HttpMethodNotAllowed;
+var HttpBadRequest = require('./common').HttpBadRequest;
 var HttpException = require('./common').HttpException;
 var parseBoolean = require('./common').parseBoolean;
 var pluralize = require('pluralize');
@@ -27,6 +29,24 @@ var httpController = require('./decorators').httpController;
 var defineDecorator = require('./decorators').defineDecorator;
 var HttpBaseController = require('./base-controller');
 var ODataModelBuilder = require('most-data/odata').ODataModelBuilder;
+var DefaultTopQueryOption = 50;
+
+function getOwnPropertyNames_(obj) {
+    if (typeof obj === 'undefined' || obj === null) {
+        return [];
+    }
+    var ownPropertyNames = [];
+    //get object methods
+    var proto = obj;
+    while(proto) {
+        ownPropertyNames = ownPropertyNames.concat(Object.getOwnPropertyNames(proto).filter( function(x) {
+            return ownPropertyNames.indexOf(x)<0;
+        }));
+        proto = Object.getPrototypeOf(proto);
+    }
+    return ownPropertyNames;
+}
+
 /**
  * @classdesc HttpBaseController class describes a base controller.
  * @class
@@ -321,6 +341,37 @@ defineDecorator(HttpServiceController.prototype, 'postItem', httpPost());
 defineDecorator(HttpServiceController.prototype, 'postItem', httpPut());
 defineDecorator(HttpServiceController.prototype, 'postItem', httpAction("item"));
 
+/**
+ * @param {DataQueryable} target
+ * @param {DataQueryable} source
+ */
+function extendQueryable(target, source) {
+    if (source.query.$select) {
+        target.query.$select = source.query.$select;
+    }
+    if (source.$view) {
+        target.$view = source.$view;
+    }
+    if (source.$expand) {
+        target.$expand = source.$expand;
+    }
+    if (source.query.$group) {
+        target.query.$group = source.query.$group;
+    }
+    if (source.query.$order) {
+        target.query.$order = source.query.$order;
+    }
+    if (source.query.$prepared) {
+        target.query.$where = source.query.$prepared;
+    }
+    if (source.query.$skip) {
+        target.query.$skip = source.query.$skip;
+    }
+    if (source.query.$take) {
+        target.query.$take = source.query.$take;
+    }
+    return target;
+}
 
 /**
  *
@@ -403,9 +454,9 @@ HttpServiceController.prototype.getNavigationProperty = function(entitySet, navi
                                         return x.type === otherModel.name;
                                     });
                                 }
-                                if (_.isNil(attr)) {
-                                    return Q.reject(new HttpNotFoundException("Association not found"));
-                                }
+                                // if (_.isNil(attr)) {
+                                //     return Q.reject(new HttpNotFoundException("Association not found"));
+                                // }
                                 if (attr) {
                                     model = attr.name;
                                     mapping = model.inferMapping(attr.name);
@@ -414,6 +465,67 @@ HttpServiceController.prototype.getNavigationProperty = function(entitySet, navi
                         }
                     }
                     if (_.isNil(mapping)) {
+                        var action = thisEntitySet.entityType.hasAction(navigationProperty);
+                        if (action) {
+                            var returnsCollection = _.isString(action.returnCollectionType);
+                            var returnModel = context.model(action.returnType || action.returnCollectionType);
+                            //find method
+                            const actions = getOwnPropertyNames_(obj);
+                            const re = new RegExp("^" + action.name + "$", "ig");
+                            var f = _.find(actions, function(x) {
+                                return typeof obj[x] === 'function' && re.test(obj[x].httpAction);
+                            });
+                            if (f) {
+                                var memberFunc = obj[f];
+                                return Q.resolve(memberFunc.bind(obj)()).then(function(result) {
+                                    if (result instanceof DataQueryable) {
+                                        if (_.isNil(returnModel)) {
+                                            return Q.reject(new HttpNotFoundException("Result Entity not found"));
+                                        }
+                                        const returnEntitySet = self.getBuilder().getEntityTypeEntitySet(returnModel.name);
+                                        var filter = Q.nbind(returnModel.filter, returnModel);
+                                        //if the return value is a single instance
+                                        if (!returnsCollection) {
+                                            //pass context parameters
+                                            var params = {};
+                                            if (_.isNil(navigationProperty)) {
+                                                params = {
+                                                    "$select":context.params.$select,
+                                                    "$expand":context.params.$expand
+                                                }
+                                            }
+                                            //filter with parameters
+                                            return filter(params).then(function(q) {
+                                                //get item
+                                                return q.getItem().then(function(result) {
+                                                    if (_.isNil(result)) {
+                                                        return Q.resolve(new HttpNotFoundException());
+                                                    }
+                                                    //return result
+                                                    return Q.resolve(self.json(returnEntitySet.mapInstance(context,result)));
+                                                });
+                                            });
+                                        }
+                                        //else if the return value is a collection
+                                        return filter( _.extend({
+                                            "$top":DefaultTopQueryOption
+                                        },context.params)).then(function(q) {
+                                            var count = context.params.hasOwnProperty('$inlinecount') ? parseBoolean(context.params.$inlinecount) : (context.params.hasOwnProperty('$count') ? parseBoolean(context.params.$count) : false);
+                                            var q1 = extendQueryable(result, q);
+                                            if (count) {
+                                                return q1.getList().then(function(result) {
+                                                    return Q.resolve(self.json(returnEntitySet.mapInstanceSet(context,result)));
+                                                });
+                                            }
+                                            return q1.getItems().then(function(result) {
+                                                return Q.resolve(self.json(returnEntitySet.mapInstanceSet(context,result)));
+                                            });
+                                        });
+                                    }
+                                    return Q.resolve(self.json(result));
+                                });
+                            }
+                        }
                         return Q.reject(new HttpNotFoundException("Association not found"));
                     }
                 }
@@ -497,7 +609,6 @@ HttpServiceController.prototype.getNavigationProperty = function(entitySet, navi
                         var parentEntitySet = self.getBuilder().getEntityTypeEntitySet(parentModel.name);
                         return Q.resolve(self.json(parentEntitySet.mapInstance(context,result[navigationProperty])));
                     });
-
                 }
                 else {
                     return Q.reject(new HttpNotFoundException());
@@ -517,10 +628,94 @@ defineDecorator(HttpServiceController.prototype, 'getNavigationProperty', httpAc
  *
  * @param {string} entitySet
  * @param {string} entityAction
- * @param {*} id
+ * @param {string=} navigationProperty
  */
-HttpServiceController.prototype.getEntityAction = function(entitySet, entityAction, id) {
-    return Q.reject(new HttpException(502));
+HttpServiceController.prototype.getEntityAction = function(entitySet, entityAction, navigationProperty) {
+    var self = this;
+    var context = self.context;
+    var thisEntitySet = this.getBuilder().getEntitySet(entitySet);
+    if (_.isNil(thisEntitySet)) {
+        return Q.reject(new HttpNotFoundException("EntitySet not found"));
+    }
+    var model = context.model(thisEntitySet.entityType.name);
+    if (_.isNil(model)) {
+        return Q.reject(new HttpNotFoundException("Entity not found"));
+    }
+    var action = thisEntitySet.entityType.collection.hasAction(entityAction);
+    if (action) {
+        //get data object class
+        var DataObjectClass = model.getDataObjectType();
+
+        const re = new RegExp("^" + entityAction + "$", "ig");
+        var staticFunc = _.find(getOwnPropertyNames_(DataObjectClass), function(x) {
+            return (typeof DataObjectClass[x] === 'function') && re.test(DataObjectClass[x].httpAction);
+        });
+        if (staticFunc) {
+            return Q.resolve(DataObjectClass[staticFunc](context)).then(function(result) {
+                var returnsCollection = _.isString(action.returnCollectionType);
+                var returnModel = context.model(action.returnType || action.returnCollectionType);
+                if (_.isNil(returnModel)) {
+                    return Q.reject(new HttpNotFoundException("Result Entity not found"));
+                }
+                const returnEntitySet = self.getBuilder().getEntityTypeEntitySet(returnModel.name);
+                if (result instanceof DataQueryable) {
+                    var filter = Q.nbind(returnModel.filter, returnModel);
+                    if (!returnsCollection) {
+                        //pass context parameters (if navigationProperty is empty)
+                        var params = {};
+                        if (_.isNil(navigationProperty)) {
+                            params = {
+                                "$select":context.params.$select,
+                                "$expand":context.params.$expand
+                            }
+                        }
+                        return filter(params).then(function(q) {
+                            //do not add context params
+                            return q.getItem().then(function(result) {
+                                if (_.isNil(result)) {
+                                    return Q.resolve(new HttpNotFoundException());
+                                }
+                                if (_.isString(navigationProperty)) {
+                                    return self.getNavigationProperty(returnEntitySet.name,navigationProperty, result[returnModel.primaryKey])
+                                }
+                                return Q.resolve(self.json(returnEntitySet.mapInstance(context,result)));
+                            });
+                        });
+                    }
+                    if (typeof navigationProperty !== 'undefined') {
+                        return Q.reject(new HttpBadRequest());
+                    }
+                    return filter( _.extend({
+                            "$top":DefaultTopQueryOption
+                        },context.params)).then(function(q) {
+                        var count = context.params.hasOwnProperty('$inlinecount') ? parseBoolean(context.params.$inlinecount) : (context.params.hasOwnProperty('$count') ? parseBoolean(context.params.$count) : false);
+                        var q1 = extendQueryable(result, q);
+                        if (count) {
+                            return q1.getList().then(function(result) {
+                                return Q.resolve(self.json(returnEntitySet.mapInstanceSet(context,result)));
+                            });
+                        }
+                        return q1.getItems().then(function(result) {
+                            return Q.resolve(self.json(returnEntitySet.mapInstanceSet(context,result)));
+                        });
+                    });
+                }
+                if (_.isNil(navigationProperty)) {
+                    if (returnsCollection) {
+                        return Q.resolve(self.json(returnEntitySet.mapInstanceSet(context,result)));
+                    }
+                    else {
+                        return Q.resolve(self.json(returnEntitySet.mapInstance(context,result)));
+                    }
+                }
+                if (_.isNil(returnEntitySet)) {
+                    return Q.reject(new HttpNotFoundException("Result EntitySet not found"));
+                }
+                return self.getNavigationProperty(returnEntitySet.name,navigationProperty, result[returnModel.primaryKey])
+            });
+        }
+    }
+    return Q.reject(new HttpNotFoundException());
 };
 defineDecorator(HttpServiceController.prototype, 'getEntityAction', httpGet());
 defineDecorator(HttpServiceController.prototype, 'getEntityAction', httpAction("entityAction"));
