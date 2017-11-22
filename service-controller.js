@@ -499,7 +499,7 @@ HttpServiceController.prototype.getNavigationProperty = function(entitySet, navi
                                                 //get item
                                                 return q.getItem().then(function(result) {
                                                     if (_.isNil(result)) {
-                                                        return Q.resolve(new HttpNotFoundException());
+                                                        return Q.reject(new HttpNotFoundException());
                                                     }
                                                     //return result
                                                     return Q.resolve(self.json(returnEntitySet.mapInstance(context,result)));
@@ -671,9 +671,10 @@ HttpServiceController.prototype.getEntityAction = function(entitySet, entityActi
                         }
                         return filter(params).then(function(q) {
                             //do not add context params
-                            return q.getItem().then(function(result) {
+                            var q1 = extendQueryable(result, q);
+                            return q1.getItem().then(function(result) {
                                 if (_.isNil(result)) {
-                                    return Q.resolve(new HttpNotFoundException());
+                                    return Q.reject(new HttpNotFoundException());
                                 }
                                 if (_.isString(navigationProperty)) {
                                     return self.getNavigationProperty(returnEntitySet.name,navigationProperty, result[returnModel.primaryKey])
