@@ -20,3 +20,7 @@ function HttpHiddenController()
     //do nothing
 }
 util.inherits(HttpHiddenController, HttpController);
+
+if (typeof module !== 'undefined') {
+    module.exports = HttpHiddenController;
+}

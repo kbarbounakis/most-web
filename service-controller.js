@@ -353,7 +353,24 @@ function extendQueryable(target, source) {
         target.$view = source.$view;
     }
     if (source.$expand) {
-        target.$expand = source.$expand;
+        target.$expand=( target.$expand || []).concat(source.$expand);
+    }
+    if (source.query.$expand) {
+        var targetExpand = [];
+        if (_.isArray(target.query.$expand)) {
+            targetExpand = target.query.$expand;
+        }
+        else if (typeof  target.query.$expand === 'object') {
+            targetExpand.push(target.query.$expand);
+        }
+        var sourceExpand = [].concat(source.query.$expand);
+
+        var res = _.filter(sourceExpand, function(x) {
+            return typeof _.find(targetExpand, function(y) {
+                return y.$entity.name === x.$entity.name;
+            }) === 'undefined';
+        });
+        target.query.$expand= targetExpand.concat(res);
     }
     if (source.query.$group) {
         target.query.$group = source.query.$group;

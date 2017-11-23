@@ -94,6 +94,9 @@ ViewHandler.queryControllerClass = function(controllerName, context, callback) {
                     //try to find if current controller has a model defined
                     if (controllerModel) {
                         var controllerType = controllerModel.type || 'data';
+                        if (controllerModel.hidden || controllerModel.abstract) {
+                            controllerType = 'hidden';
+                        }
                         //try to find controller based on the model's type in controllers folder (e.g. /library-controller.js)
                         controllerPath = app.current.mapPath(util.format(ViewHandler.STR_CONTROLLER_RELPATH, controllerType));
                         fs.exists(controllerPath, function(exists) {
