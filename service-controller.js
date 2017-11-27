@@ -29,23 +29,8 @@ var httpController = require('./decorators').httpController;
 var defineDecorator = require('./decorators').defineDecorator;
 var HttpBaseController = require('./base-controller');
 var ODataModelBuilder = require('most-data/odata').ODataModelBuilder;
+var EdmMapping = require('most-data/odata').EdmMapping;
 var DefaultTopQueryOption = 50;
-
-function getOwnPropertyNames_(obj) {
-    if (typeof obj === 'undefined' || obj === null) {
-        return [];
-    }
-    var ownPropertyNames = [];
-    //get object methods
-    var proto = obj;
-    while(proto) {
-        ownPropertyNames = ownPropertyNames.concat(Object.getOwnPropertyNames(proto).filter( function(x) {
-            return ownPropertyNames.indexOf(x)<0;
-        }));
-        proto = Object.getPrototypeOf(proto);
-    }
-    return ownPropertyNames;
-}
 
 /**
  * @classdesc HttpBaseController class describes a base controller.
@@ -482,24 +467,22 @@ HttpServiceController.prototype.getNavigationProperty = function(entitySet, navi
                         }
                     }
                     if (_.isNil(mapping)) {
-                        var action = thisEntitySet.entityType.hasAction(navigationProperty);
+                        var action = thisEntitySet.entityType.hasFunction(navigationProperty);
                         if (action) {
                             var returnsCollection = _.isString(action.returnCollectionType);
                             var returnModel = context.model(action.returnType || action.returnCollectionType);
                             //find method
-                            const actions = getOwnPropertyNames_(obj);
-                            const re = new RegExp("^" + action.name + "$", "ig");
-                            var f = _.find(actions, function(x) {
-                                return typeof obj[x] === 'function' && re.test(obj[x].httpAction);
-                            });
-                            if (f) {
-                                var memberFunc = obj[f];
+                            var memberFunc = EdmMapping.hasOwnFunction(obj,  action.name);
+                            if (memberFunc) {
                                 return Q.resolve(memberFunc.bind(obj)()).then(function(result) {
                                     if (result instanceof DataQueryable) {
                                         if (_.isNil(returnModel)) {
                                             return Q.reject(new HttpNotFoundException("Result Entity not found"));
                                         }
-                                        const returnEntitySet = self.getBuilder().getEntityTypeEntitySet(returnModel.name);
+                                        var returnEntitySet = self.getBuilder().getEntityTypeEntitySet(returnModel.name);
+                                        if (_.isNil(returnEntitySet)) {
+                                            returnEntitySet = self.getBuilder().getEntity(returnModel.name);
+                                        }
                                         var filter = Q.nbind(returnModel.filter, returnModel);
                                         //if the return value is a single instance
                                         if (!returnsCollection) {
@@ -658,17 +641,13 @@ HttpServiceController.prototype.getEntityAction = function(entitySet, entityActi
     if (_.isNil(model)) {
         return Q.reject(new HttpNotFoundException("Entity not found"));
     }
-    var action = thisEntitySet.entityType.collection.hasAction(entityAction);
+    var action = thisEntitySet.entityType.collection.hasFunction(entityAction);
     if (action) {
         //get data object class
         var DataObjectClass = model.getDataObjectType();
-
-        const re = new RegExp("^" + entityAction + "$", "ig");
-        var staticFunc = _.find(getOwnPropertyNames_(DataObjectClass), function(x) {
-            return (typeof DataObjectClass[x] === 'function') && re.test(DataObjectClass[x].httpAction);
-        });
+        var staticFunc = EdmMapping.hasOwnFunction(DataObjectClass,entityAction);
         if (staticFunc) {
-            return Q.resolve(DataObjectClass[staticFunc](context)).then(function(result) {
+            return Q.resolve(staticFunc(context)).then(function(result) {
                 var returnsCollection = _.isString(action.returnCollectionType);
                 var returnModel = context.model(action.returnType || action.returnCollectionType);
                 if (_.isNil(returnModel)) {
