@@ -426,7 +426,7 @@ HttpServiceController.prototype.getNavigationProperty = function(entitySet, navi
                 //get mapping
                 var mapping = model.inferMapping(navigationProperty);
                 //get count parameter
-                var count = parseBoolean(self.context.params.$inlinecount);
+                var count = context.params.hasOwnProperty('$inlinecount') ? parseBoolean(context.params.$inlinecount) : (context.params.hasOwnProperty('$count') ? parseBoolean(context.params.$count) : false);
                 if (_.isNil(mapping)) {
                     //try to find associated model
                     //get singular model name
@@ -585,10 +585,7 @@ HttpServiceController.prototype.getNavigationProperty = function(entitySet, navi
                     var associatedEntitySet = self.getBuilder().getEntityTypeEntitySet(associatedModel.name);
                     return Q.nbind(associatedModel.filter, associatedModel)(self.context.params).then(function(q) {
                         if (count) {
-                            q.where(mapping.childField).equal(key).list(function (err, result) {
-                                if (err) {
-                                    return Q.reject(err);
-                                }
+                            return q.where(mapping.childField).equal(key).getList().then(function (result) {
                                 return Q.resolve(self.json(associatedEntitySet.mapInstanceSet(context,result)));
                             });
                         }
