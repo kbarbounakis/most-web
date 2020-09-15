@@ -1,11 +1,10 @@
-# MOST Web Framework
+# most-data
 
 ![MOST Web Framework Codename Blushift](https://www.themost.io/assets/images/most_logo_128.png)
 
-### The new version of MOST Web Framework v2.x Codename Blueshift is available. Happy coding!
+### A newer version of MOST Web Framework is available. Happy coding!
 
-[Checkout the new exciting features like ES7 compatibility, new @themost CLI tool, 
-EcmaScript decorators, OData v4 compatibility, AngularJS for Server in-parallel template engine and many more.](https://github.com/themost-framework/themost)
+[Checkout the new exciting features](https://github.com/themost-framework/themost)
 
 _<small>Note: If you want to use MOST Web Framework v.1x, continue reading.</small>_
 
